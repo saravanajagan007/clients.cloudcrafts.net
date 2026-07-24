@@ -1,0 +1,450 @@
+// AgencyOS — Complete Production Multi-Tenant PostgreSQL Prisma Schema
+// Supports Multi-Tenancy (Row-Level Security / Workspace Isolation), Audit Logs, UUID Primary Keys, Soft Deletes & RBAC
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  SUPER_ADMIN
+  AGENCY_OWNER
+  SALES_MANAGER
+  SALES_EXECUTIVE
+  PROJECT_MANAGER
+  DESIGNER
+  DEVELOPER
+  SEO_EXECUTIVE
+  CONTENT_WRITER
+  FINANCE
+  SUPPORT
+  CLIENT
+  CUSTOM
+}
+
+enum LeadTemperature {
+  COLD
+  WARM
+  HOT
+  QUALIFIED
+  REJECTED
+}
+
+enum PipelineStage {
+  NEW_INQUIRY
+  CONTACTED
+  REQUIREMENT_GATHERING
+  MEETING_SCHEDULED
+  PROPOSAL_PREPARING
+  PROPOSAL_SENT
+  NEGOTIATION
+  FOLLOW_UP_1
+  FOLLOW_UP_2
+  FOLLOW_UP_3
+  WON
+  LOST
+  FUTURE_OPPORTUNITY
+}
+
+enum ProposalStatus {
+  DRAFT
+  SENT
+  VIEWED
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  PENDING
+  PAID
+  OVERDUE
+  CANCELLED
+  PARTIALLY_PAID
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_ON_CLIENT
+  RESOLVED
+  CLOSED
+}
+
+// -------------------------------------------------------------
+// 1. TENANT & WORKSPACE MANAGEMENT
+// -------------------------------------------------------------
+
+model Tenant {
+  id              String        @id @default(uuid())
+  name            String
+  slug            String        @unique
+  logoUrl         String?
+  brandColor      String        @default("#6366f1")
+  secondaryColor  String        @default("#06b6d4")
+  currency        String        @default("USD")
+  timezone        String        @default("UTC")
+  domain          String?
+  storageQuotaMb  Int           @default(50000)
+  storageUsedMb   Int           @default(0)
+  isWhiteLabel    Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  users           User[]
+  roles           CustomRole[]
+  clients         Client[]
+  leads           Lead[]
+  projects        Project[]
+  proposals       Proposal[]
+  quotations      Quotation[]
+  invoices        Invoice[]
+  serviceCatalog  ServiceItem[]
+  workflows       Workflow[]
+  domainAssets    DomainAsset[]
+  tickets         SupportTicket[]
+  auditLogs       AuditLog[]
+
+  @@map("tenants")
+}
+
+model User {
+  id              String        @id @default(uuid())
+  tenantId        String
+  email           String        @unique
+  passwordHash    String
+  fullName        String
+  avatarUrl       String?
+  role            Role          @default(SALES_EXECUTIVE)
+  customRoleId    String?
+  twoFactorSecret String?
+  isTwoFactorOn   Boolean       @default(false)
+  isActive        Boolean       @default(true)
+  lastLoginAt     DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  tenant          Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customRole      CustomRole?   @relation(fields: [customRoleId], references: [id])
+  assignedLeads   Lead[]        @relation("AssignedSalesperson")
+  assignedTasks   Task[]        @relation("AssignedTasks")
+  createdTickets  SupportTicket[] @relation("TicketCreator")
+  auditLogs       AuditLog[]
+
+  @@map("users")
+}
+
+model CustomRole {
+  id          String   @id @default(uuid())
+  tenantId    String
+  name        String
+  permissions String[] // JSON array of permissions e.g. ["leads:read", "proposals:write"]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  users       User[]
+
+  @@map("custom_roles")
+}
+
+// -------------------------------------------------------------
+// 2. LEAD MANAGEMENT & SALES PIPELINE
+// -------------------------------------------------------------
+
+model Lead {
+  id              String          @id @default(uuid())
+  tenantId        String
+  company         String
+  contactPerson   String
+  email           String
+  phone           String?
+  whatsapp        String?
+  website         String?
+  industry        String?
+  companySize     String?
+  budget          Float           @default(0)
+  expectedTimeline String?
+  source          String          @default("Website Form")
+  campaign        String?
+  utmSource       String?
+  tags            String[]
+  priority        String          @default("Medium")
+  score           Int             @default(50)
+  temperature     LeadTemperature @default(WARM)
+  stage           PipelineStage   @default(NEW_INQUIRY)
+  assignedToId    String?
+  notes           String?
+  isDeleted       Boolean         @default(false)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  assignedTo      User?           @relation("AssignedSalesperson", fields: [assignedToId], references: [id])
+  activities      ActivityLog[]
+  proposals       Proposal[]
+
+  @@map("leads")
+}
+
+model ActivityLog {
+  id          String   @id @default(uuid())
+  leadId      String?
+  clientId    String?
+  type        String   // CALL, MEETING, EMAIL, WHATSAPP, NOTE, STAGE_CHANGE
+  description String
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  lead        Lead?    @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  client      Client?  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@map("activity_logs")
+}
+
+// -------------------------------------------------------------
+// 3. CLIENT Lifecycle Management
+// -------------------------------------------------------------
+
+model Client {
+  id              String   @id @default(uuid())
+  tenantId        String
+  name            String
+  industry        String?
+  gstPan          String?
+  website         String?
+  healthScore     String   @default("High") // High, Medium, At Risk
+  monthlyRetainer Float    @default(0)
+  ltv             Float    @default(0)
+  primaryContact  String
+  contactEmail    String
+  contactPhone    String?
+  address         String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  projects        Project[]
+  invoices        Invoice[]
+  tickets         SupportTicket[]
+  activities      ActivityLog[]
+
+  @@map("clients")
+}
+
+// -------------------------------------------------------------
+// 4. PROPOSAL & QUOTATION BUILDER
+// -------------------------------------------------------------
+
+model Proposal {
+  id              String         @id @default(uuid())
+  tenantId        String
+  leadId          String?
+  title           String
+  clientName      String
+  totalAmount     Float
+  status          ProposalStatus @default(DRAFT)
+  publicToken     String         @unique @default(uuid())
+  passwordHash    String?
+  signedBy        String?
+  signedAt        DateTime?
+  validUntil      DateTime
+  items           Json           // Line items array
+  contentSections Json           // Reusable HTML/Markdown proposal sections
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  tenant          Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  lead            Lead?          @relation(fields: [leadId], references: [id])
+
+  @@map("proposals")
+}
+
+model Quotation {
+  id          String   @id @default(uuid())
+  tenantId    String
+  clientName  String
+  totalAmount Float
+  taxRate     Float    @default(18.0)
+  currency    String   @default("USD")
+  items       Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("quotations")
+}
+
+model ServiceItem {
+  id          String   @id @default(uuid())
+  tenantId    String
+  name        String   // e.g., Website Design, SEO Retainer, Logo Branding
+  category    String
+  unitPrice   Float
+  description String?
+  createdAt   DateTime @default(now())
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("service_items")
+}
+
+// -------------------------------------------------------------
+// 5. PROJECT & TASK MANAGEMENT
+// -------------------------------------------------------------
+
+model Project {
+  id              String   @id @default(uuid())
+  tenantId        String
+  clientId        String
+  title           String
+  serviceCategory String
+  progressPercent Int      @default(0)
+  currentMilestone String?
+  deadline        DateTime?
+  budget          Float    @default(0)
+  status          String   @default("In Progress")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client          Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  tasks           Task[]
+
+  @@map("projects")
+}
+
+model Task {
+  id          String    @id @default(uuid())
+  projectId   String
+  title       String
+  description String?
+  priority    String    @default("Medium") // Low, Medium, High, Urgent
+  status      String    @default("Todo")   // Todo, In Progress, Review, Completed
+  assignedToId String?
+  dueDate     DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignedTo  User?     @relation("AssignedTasks", fields: [assignedToId], references: [id])
+
+  @@map("tasks")
+}
+
+// -------------------------------------------------------------
+// 6. INVOICING & FINANCE
+// -------------------------------------------------------------
+
+model Invoice {
+  id          String        @id @default(uuid())
+  tenantId    String
+  clientId    String
+  invoiceNum  String
+  amount      Float
+  status      InvoiceStatus @default(PENDING)
+  dueDate     DateTime
+  items       Json
+  issuedDate  DateTime      @default(now())
+
+  tenant      Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client      Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@map("invoices")
+}
+
+// -------------------------------------------------------------
+// 7. DOMAIN & HOSTING ASSETS
+// -------------------------------------------------------------
+
+model DomainAsset {
+  id              String    @id @default(uuid())
+  tenantId        String
+  domainName      String
+  registrar       String
+  expiryDate      DateTime
+  sslStatus       String    @default("Active")
+  hostingProvider String
+  dnsProvider     String    @default("Cloudflare")
+  createdAt       DateTime  @default(now())
+
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("domain_assets")
+}
+
+// -------------------------------------------------------------
+// 8. SUPPORT TICKETS
+// -------------------------------------------------------------
+
+model SupportTicket {
+  id          String         @id @default(uuid())
+  tenantId    String
+  clientId    String
+  createdById String
+  ticketNum   String
+  subject     String
+  category    String
+  priority    TicketPriority @default(MEDIUM)
+  status      TicketStatus   @default(OPEN)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  tenant      Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client      Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  createdBy   User           @relation("TicketCreator", fields: [createdById], references: [id])
+
+  @@map("support_tickets")
+}
+
+// -------------------------------------------------------------
+// 9. AUTOMATION ENGINE WORKFLOWS
+// -------------------------------------------------------------
+
+model Workflow {
+  id          String   @id @default(uuid())
+  tenantId    String
+  name        String
+  triggerType String   // e.g. LEAD_CREATED, PROPOSAL_SIGNED, INVOICE_OVERDUE
+  nodesJson   Json     // Visual graph nodes & connections
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("workflows")
+}
+
+// -------------------------------------------------------------
+// 10. AUDIT LOGS
+// -------------------------------------------------------------
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  tenantId    String
+  userId      String?
+  action      String   // e.g. LEAD_STAGE_MOVED, PROPOSAL_GENERATED, INVOICE_PAID
+  entityType  String
+  entityId    String
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user        User?    @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}

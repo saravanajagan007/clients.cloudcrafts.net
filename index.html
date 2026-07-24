@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CloudCrafts Clients — Infrastructure & Project Portal</title>
-  <meta name="description" content="CloudCrafts Enterprise Client Portal for Cloud Infrastructure, Deployments, API Credentials, and Billing." />
+  <title>AgencyOS — Multi-Tenant Enterprise Agency Operating System & CRM</title>
+  <meta name="description" content="Production-grade SaaS CRM for Website Design Agencies, Digital Marketing Agencies, Software Companies, and Freelancers." />
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
@@ -13,42 +13,73 @@
     <!-- Sidebar Navigation -->
     <aside class="sidebar">
       <div class="brand">
-        <div class="brand-icon">C</div>
+        <div class="brand-icon">⚡</div>
         <div class="brand-text">
-          <h1>CloudCrafts</h1>
-          <p>CLIENT PORTAL</p>
+          <h1>AgencyOS</h1>
+          <p>ENTERPRISE SAAS</p>
         </div>
       </div>
 
+      <!-- Multi-Tenant Workspace Selector -->
+      <div class="tenant-selector">
+        <select id="tenant-select" aria-label="Select Workspace Tenant">
+          <!-- Populated dynamically by state.js -->
+        </select>
+      </div>
+
       <nav class="nav-group">
-        <div class="nav-title">Navigation</div>
+        <div class="nav-title">Core Operations</div>
         <a class="nav-item active" data-view="dashboard">
           <span class="nav-icon">📊</span>
           <span>Overview</span>
         </a>
-        <a class="nav-item" data-view="servers">
-          <span class="nav-icon">🖥️</span>
-          <span>Cloud Servers</span>
+        <a class="nav-item" data-view="kanban">
+          <span class="nav-icon">📌</span>
+          <span>Sales Pipeline</span>
         </a>
-        <a class="nav-item" data-view="deployments">
-          <span class="nav-icon">🚀</span>
-          <span>Deployments</span>
+        <a class="nav-item" data-view="leads">
+          <span class="nav-icon">🎯</span>
+          <span>Lead Directory</span>
         </a>
-        <a class="nav-item" data-view="apikeys">
-          <span class="nav-icon">🔑</span>
-          <span>API Credentials</span>
+        <a class="nav-item" data-view="clients">
+          <span class="nav-icon">💼</span>
+          <span>Client 360° Directory</span>
+        </a>
+        <a class="nav-item" data-view="proposals">
+          <span class="nav-icon">✍️</span>
+          <span>Proposal Builder</span>
         </a>
       </nav>
 
       <nav class="nav-group">
-        <div class="nav-title">Management</div>
-        <a class="nav-item" data-view="billing">
-          <span class="nav-icon">💳</span>
-          <span>Billing & Plan</span>
+        <div class="nav-title">Automation & AI</div>
+        <a class="nav-item" data-view="aicopilot">
+          <span class="nav-icon">🤖</span>
+          <span>AI Copilot Engine</span>
         </a>
-        <a class="nav-item" data-view="support">
-          <span class="nav-icon">💬</span>
-          <span>Support Tickets</span>
+        <a class="nav-item" data-view="automation">
+          <span class="nav-icon">⚡</span>
+          <span>Visual Automation</span>
+        </a>
+        <a class="nav-item" data-view="clientportal">
+          <span class="nav-icon">🌐</span>
+          <span>End-Client Portal</span>
+        </a>
+      </nav>
+
+      <nav class="nav-group">
+        <div class="nav-title">Finance & Assets</div>
+        <a class="nav-item" data-view="invoices">
+          <span class="nav-icon">💳</span>
+          <span>Invoices & Retainers</span>
+        </a>
+        <a class="nav-item" data-view="hosting">
+          <span class="nav-icon">☁️</span>
+          <span>Domain & Hosting</span>
+        </a>
+        <a class="nav-item" data-view="settings">
+          <span class="nav-icon">⚙️</span>
+          <span>Workspace & RBAC</span>
         </a>
       </nav>
 
@@ -56,7 +87,7 @@
         <div class="avatar">SJ</div>
         <div class="user-info">
           <h4>Saravana Jagan</h4>
-          <p>Enterprise Client</p>
+          <p id="user-role-badge">Agency Owner</p>
         </div>
       </div>
     </aside>
@@ -67,11 +98,12 @@
       <header class="top-header">
         <div class="header-search">
           <span class="search-icon">🔍</span>
-          <input type="text" placeholder="Search servers, deployments, tickets..." />
+          <input type="text" id="global-search-input" placeholder="Search leads, proposals, clients..." readonly />
+          <span class="cmd-badge">Cmd + K</span>
         </div>
         <div class="header-actions">
-          <button class="action-btn" id="btn-new-ticket">+ New Ticket</button>
-          <button class="action-btn primary" id="btn-quick-deploy">⚡ Quick Deploy</button>
+          <button class="action-btn" id="btn-quick-lead">+ Add Lead</button>
+          <button class="action-btn primary" id="btn-cmd-palette">⚡ Command Palette</button>
         </div>
       </header>
 
@@ -81,276 +113,216 @@
         <!-- View 1: Dashboard Overview -->
         <section id="view-dashboard" class="view-section active">
           <div class="page-title">
-            <h2>Infrastructure Overview</h2>
-            <p>Real-time cluster health and active managed services.</p>
+            <h2 id="workspace-title-display">Agency Overview</h2>
+            <p id="workspace-subtitle-display">Real-time performance, MRR velocity, and active pipeline status.</p>
           </div>
 
           <div class="metrics-grid">
             <div class="metric-card">
               <div class="metric-header">
-                <span>Active Instances</span>
-                <div class="metric-icon">🖥️</div>
+                <span>Monthly Recurring Revenue</span>
+                <div class="metric-icon">💰</div>
               </div>
-              <div class="metric-value">12 / 14</div>
-              <div class="metric-trend trend-up">▲ 98.4% uptime status</div>
+              <div class="metric-value" id="dash-mrr">$42,500</div>
+              <div class="metric-trend trend-up">▲ 18.2% vs last month</div>
             </div>
 
             <div class="metric-card">
               <div class="metric-header">
-                <span>CPU Cluster Load</span>
-                <div class="metric-icon">⚡</div>
+                <span>Active Clients</span>
+                <div class="metric-icon">💼</div>
               </div>
-              <div class="metric-value" id="metric-cpu">34%</div>
-              <div class="metric-trend trend-up">Normal range</div>
+              <div class="metric-value" id="dash-clients">28</div>
+              <div class="metric-trend trend-up">▲ 3 new this month</div>
             </div>
 
             <div class="metric-card">
               <div class="metric-header">
-                <span>RAM Allocation</span>
-                <div class="metric-icon">🧠</div>
+                <span>Active Projects</span>
+                <div class="metric-icon">🚀</div>
               </div>
-              <div class="metric-value" id="metric-ram">18.4 GB</div>
-              <div class="metric-trend">of 32.0 GB allocated</div>
+              <div class="metric-value" id="dash-projects">14</div>
+              <div class="metric-trend">92% on-time delivery</div>
             </div>
 
             <div class="metric-card">
               <div class="metric-header">
-                <span>Monthly Bandwidth</span>
-                <div class="metric-icon">🌐</div>
+                <span>Team Capacity</span>
+                <div class="metric-icon">👥</div>
               </div>
-              <div class="metric-value">2.4 TB</div>
-              <div class="metric-trend trend-up">▲ 12% vs last month</div>
+              <div class="metric-value" id="dash-team">12 Members</div>
+              <div class="metric-trend trend-up">78% utilization rate</div>
             </div>
           </div>
 
-          <!-- Active Managed Servers Panel -->
+          <!-- AI Copilot Panel Embedded -->
+          <div id="dashboard-ai-container" style="margin-bottom: 1.75rem;"></div>
+
+          <!-- Live Activity Log -->
           <div class="glass-panel">
             <div class="panel-header">
-              <h3>Managed Cloud Instances</h3>
-              <a href="#" class="nav-item" data-view="servers" style="font-size: 0.85rem; padding: 0.2rem 0.5rem;">View All →</a>
+              <h3>Live Agency Chronological Activity Feed</h3>
             </div>
+            <div id="activity-feed-container" style="display: flex; flex-direction: column; gap: 0.75rem;">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+        </section>
 
+        <!-- View 2: Sales Pipeline Kanban -->
+        <section id="view-kanban" class="view-section">
+          <div id="kanban-component-container"></div>
+        </section>
+
+        <!-- View 3: Lead Directory -->
+        <section id="view-leads" class="view-section">
+          <div class="page-title">
+            <h2>Lead Directory & Capture Records</h2>
+            <p>Unified leads captured from Website Forms, Meta Ads, WhatsApp, and Referrals.</p>
+          </div>
+
+          <div class="glass-panel">
             <table class="data-table">
               <thead>
                 <tr>
-                  <th>Instance Name</th>
-                  <th>IP Address</th>
-                  <th>Region</th>
+                  <th>Company</th>
+                  <th>Contact Person</th>
+                  <th>Service Requested</th>
+                  <th>Budget ($)</th>
+                  <th>Score</th>
+                  <th>Stage</th>
+                </tr>
+              </thead>
+              <tbody id="leads-table-body">
+                <!-- Rendered dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- View 4: Client 360° Directory -->
+        <section id="view-clients" class="view-section">
+          <div class="page-title">
+            <h2>Client 360° Directory</h2>
+            <p>Complete lifecycle management, health scores, and retainer tracking.</p>
+          </div>
+
+          <div class="glass-panel">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Client Company</th>
+                  <th>Industry</th>
+                  <th>Primary Contact</th>
+                  <th>Health Status</th>
+                  <th>Monthly Retainer</th>
+                  <th>Lifetime Value (LTV)</th>
+                </tr>
+              </thead>
+              <tbody id="clients-table-body">
+                <!-- Rendered dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- View 5: Proposal Builder -->
+        <section id="view-proposals" class="view-section">
+          <div id="proposal-builder-container"></div>
+        </section>
+
+        <!-- View 6: AI Copilot Engine -->
+        <section id="view-aicopilot" class="view-section">
+          <div id="aicopilot-view-container"></div>
+        </section>
+
+        <!-- View 7: Visual Automation -->
+        <section id="view-automation" class="view-section">
+          <div id="automation-view-container"></div>
+        </section>
+
+        <!-- View 8: End-Client Portal View -->
+        <section id="view-clientportal" class="view-section">
+          <div id="clientportal-view-container"></div>
+        </section>
+
+        <!-- View 9: Invoices & Retainers -->
+        <section id="view-invoices" class="view-section">
+          <div class="page-title">
+            <h2>Invoices & Retainer Billing</h2>
+            <p>Automated payment tracking, recurring retainers, and payment link generator.</p>
+          </div>
+
+          <div class="glass-panel">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Invoice ID</th>
+                  <th>Client Name</th>
+                  <th>Description</th>
+                  <th>Amount</th>
+                  <th>Due Date</th>
                   <th>Status</th>
-                  <th>CPU / RAM</th>
-                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="invoices-table-body">
+                <!-- Rendered dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- View 10: Domain & Hosting Assets -->
+        <section id="view-hosting" class="view-section">
+          <div class="page-title">
+            <h2>Domain & Hosting Asset Vault</h2>
+            <p>Track client domain expirations, SSL certificates, Cloudflare DNS, and hosting servers.</p>
+          </div>
+
+          <div class="glass-panel">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Domain Name</th>
+                  <th>Registrar</th>
+                  <th>Expiry Date</th>
+                  <th>SSL Status</th>
+                  <th>DNS Provider</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td><strong>ai-api-prod-01</strong></td>
-                  <td><code>172.93.49.117</code></td>
-                  <td>US-East (N. Virginia)</td>
-                  <td><span class="badge badge-success"><span class="badge-dot"></span> Running</span></td>
-                  <td>4 vCPU / 8 GB</td>
-                  <td><button class="action-btn btn-sm btn-power-toggle">Restart</button></td>
+                  <td><strong>novusfintech.com</strong></td>
+                  <td>GoDaddy</td>
+                  <td>2027-03-15</td>
+                  <td><span class="badge badge-success"><span class="badge-dot"></span> Active (Let's Encrypt)</span></td>
+                  <td>Cloudflare Enterprise</td>
                 </tr>
                 <tr>
-                  <td><strong>playing-web-cluster</strong></td>
-                  <td><code>172.93.49.118</code></td>
-                  <td>EU-Central (Frankfurt)</td>
-                  <td><span class="badge badge-success"><span class="badge-dot"></span> Running</span></td>
-                  <td>8 vCPU / 16 GB</td>
-                  <td><button class="action-btn btn-sm btn-power-toggle">Restart</button></td>
-                </tr>
-                <tr>
-                  <td><strong>arrangewed-db-replica</strong></td>
-                  <td><code>172.93.49.119</code></td>
-                  <td>AP-South (Mumbai)</td>
-                  <td><span class="badge badge-warning"><span class="badge-dot"></span> Syncing</span></td>
-                  <td>2 vCPU / 4 GB</td>
-                  <td><button class="action-btn btn-sm btn-power-toggle">Restart</button></td>
+                  <td><strong>aerodynamics.com</strong></td>
+                  <td>Cloudflare Registrar</td>
+                  <td>2028-11-20</td>
+                  <td><span class="badge badge-success"><span class="badge-dot"></span> Active</span></td>
+                  <td>Cloudflare Enterprise</td>
                 </tr>
               </tbody>
             </table>
           </div>
         </section>
 
-        <!-- View 2: Cloud Servers -->
-        <section id="view-servers" class="view-section">
+        <!-- View 11: Settings & RBAC -->
+        <section id="view-settings" class="view-section">
           <div class="page-title">
-            <h2>Cloud Servers & Node Pools</h2>
-            <p>Manage server instances, reboot nodes, and monitor hardware load.</p>
-          </div>
-
-          <div class="glass-panel">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Server Name</th>
-                  <th>Type / Specs</th>
-                  <th>Location</th>
-                  <th>Status</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td><strong>ai.saravanajagan.com</strong></td>
-                  <td>c6g.xlarge (4 vCPU, 8GB)</td>
-                  <td>US-East</td>
-                  <td><span class="badge badge-success"><span class="badge-dot"></span> Running</span></td>
-                  <td><button class="action-btn btn-sm btn-power-toggle">Restart</button></td>
-                </tr>
-                <tr>
-                  <td><strong>tools.saravanajagan.com</strong></td>
-                  <td>t4g.medium (2 vCPU, 4GB)</td>
-                  <td>US-East</td>
-                  <td><span class="badge badge-success"><span class="badge-dot"></span> Running</span></td>
-                  <td><button class="action-btn btn-sm btn-power-toggle">Restart</button></td>
-                </tr>
-                <tr>
-                  <td><strong>loiter-net-worker</strong></td>
-                  <td>t4g.small (1 vCPU, 2GB)</td>
-                  <td>AP-South</td>
-                  <td><span class="badge badge-danger"><span class="badge-dot"></span> Stopped</span></td>
-                  <td><button class="action-btn btn-sm primary btn-power-toggle">Start</button></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <!-- View 3: Deployments -->
-        <section id="view-deployments" class="view-section">
-          <div class="page-title">
-            <h2>Deployment Pipelines</h2>
-            <p>Continuous Integration & GitHub build pipelines.</p>
-          </div>
-
-          <div class="glass-panel">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Repository</th>
-                  <th>Commit</th>
-                  <th>Branch</th>
-                  <th>Build Status</th>
-                  <th>Duration</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td><strong>saravanajagan007/ai.saravanajagan.com</strong></td>
-                  <td><code>66753fd</code> — Enhance model support</td>
-                  <td><code>main</code></td>
-                  <td><span class="badge badge-success"><span class="badge-dot"></span> Deployed</span></td>
-                  <td>42s</td>
-                </tr>
-                <tr>
-                  <td><strong>saravanajagan007/clients.cloudcrafts.net</strong></td>
-                  <td><code>initial</code> — Client portal init</td>
-                  <td><code>main</code></td>
-                  <td><span class="badge badge-success"><span class="badge-dot"></span> Deployed</span></td>
-                  <td>18s</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <!-- View 4: API Credentials -->
-        <section id="view-apikeys" class="view-section">
-          <div class="page-title">
-            <h2>API Credentials & Access Keys</h2>
-            <p>Securely store and manage application secret tokens.</p>
+            <h2>Workspace Settings & RBAC Permissions Matrix</h2>
+            <p>White-label brand configuration, role permissions, and API key management.</p>
           </div>
 
           <div class="glass-panel">
             <div class="panel-header">
-              <h3>Active Secrets</h3>
+              <h3>Role-Based Access Control (RBAC)</h3>
             </div>
-
-            <div style="display: flex; flex-direction: column; gap: 1rem;">
-              <div class="key-item" style="background: rgba(10, 15, 26, 0.6); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-glass); display: flex; align-items: center; justify-content: space-between;">
-                <div>
-                  <h4 style="font-size: 0.9rem; margin-bottom: 0.25rem;">AI API Production Key</h4>
-                  <code class="key-value" data-masked="true" data-secret="4ea70792a5a65531bfa8e63a067080a3f594d01598df2eca">••••••••••••••••••••••••••••••••</code>
-                </div>
-                <div style="display: flex; gap: 0.5rem;">
-                  <button class="action-btn btn-sm btn-key-toggle">Show</button>
-                  <button class="action-btn btn-sm btn-key-copy">Copy</button>
-                </div>
-              </div>
-
-              <div class="key-item" style="background: rgba(10, 15, 26, 0.6); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-glass); display: flex; align-items: center; justify-content: space-between;">
-                <div>
-                  <h4 style="font-size: 0.9rem; margin-bottom: 0.25rem;">CloudCrafts Master SDK Token</h4>
-                  <code class="key-value" data-masked="true" data-secret="cc_live_9f88a1b2c3d4e5f6g7h8i9j0k1l2m3n4">••••••••••••••••••••••••••••••••</code>
-                </div>
-                <div style="display: flex; gap: 0.5rem;">
-                  <button class="action-btn btn-sm btn-key-toggle">Show</button>
-                  <button class="action-btn btn-sm btn-key-copy">Copy</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- View 5: Billing -->
-        <section id="view-billing" class="view-section">
-          <div class="page-title">
-            <h2>Billing & Subscription</h2>
-            <p>Overview of monthly plan, compute usage, and downloadable invoices.</p>
-          </div>
-
-          <div class="glass-panel">
-            <div class="panel-header">
-              <h3>Enterprise Cloud Tier</h3>
-              <span class="badge badge-success"><span class="badge-dot"></span> Active Subscription</span>
-            </div>
-            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">Next renewal date: August 1, 2026</p>
-            <button class="action-btn primary">Download Monthly Statement (PDF)</button>
-          </div>
-        </section>
-
-        <!-- View 6: Support Tickets -->
-        <section id="view-support" class="view-section">
-          <div class="page-title">
-            <h2>Support Center</h2>
-            <p>Submit tickets and communicate directly with CloudCrafts engineers.</p>
-          </div>
-
-          <div class="glass-panel">
-            <div class="panel-header">
-              <h3>Recent Support Tickets</h3>
-            </div>
-
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Ticket ID</th>
-                  <th>Subject</th>
-                  <th>Status</th>
-                  <th>Category</th>
-                  <th>Created</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody id="tickets-body">
-                <tr>
-                  <td><strong>#TK-8941</strong></td>
-                  <td>Request SSL extension for subdomain</td>
-                  <td><span class="badge badge-success"><span class="badge-dot"></span> Resolved</span></td>
-                  <td>Infrastructure</td>
-                  <td>Jul 20, 2026</td>
-                  <td><button class="action-btn btn-sm">View</button></td>
-                </tr>
-                <tr>
-                  <td><strong>#TK-8812</strong></td>
-                  <td>High Memory usage query on worker 02</td>
-                  <td><span class="badge badge-success"><span class="badge-dot"></span> Resolved</span></td>
-                  <td>Monitoring</td>
-                  <td>Jul 12, 2026</td>
-                  <td><button class="action-btn btn-sm">View</button></td>
-                </tr>
-              </tbody>
-            </table>
+            <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 1rem;">Current Role: <strong>Agency Owner</strong> (Full access to all leads, invoices, proposals, and team settings)</p>
+            <button class="action-btn primary" onclick="alert('RBAC permission matrix saved successfully!')">Save Permission Matrix</button>
           </div>
         </section>
 
@@ -358,35 +330,42 @@
     </main>
   </div>
 
-  <!-- New Ticket Modal -->
-  <div class="modal-backdrop" id="ticket-modal">
+  <!-- Add Lead Modal -->
+  <div class="modal-backdrop" id="add-lead-modal">
     <div class="modal-box">
       <div class="modal-header">
-        <h3>Create Support Ticket</h3>
-        <button class="close-btn" id="btn-close-modal">&times;</button>
+        <h3>Add New Lead Inquiry</h3>
+        <button class="close-btn" onclick="document.getElementById('add-lead-modal').classList.remove('active')">&times;</button>
       </div>
-      <form id="ticket-form">
+      <form id="add-lead-form">
         <div class="form-group">
-          <label for="ticket-subject">Subject</label>
-          <input type="text" id="ticket-subject" class="form-control" placeholder="Describe the issue or request..." required />
+          <label for="lead-company">Company Name</label>
+          <input type="text" id="lead-company" class="form-control" placeholder="e.g. Apex Cybernetics" required />
         </div>
         <div class="form-group">
-          <label for="ticket-category">Category</label>
-          <select id="ticket-category" class="form-control">
-            <option value="Infrastructure">Infrastructure & Cloud</option>
-            <option value="Security">Security & Access</option>
-            <option value="Billing">Billing & Subscription</option>
-            <option value="Other">Other</option>
-          </select>
+          <label for="lead-contact">Contact Person Name</label>
+          <input type="text" id="lead-contact" class="form-control" placeholder="e.g. Sarah Connor" required />
+        </div>
+        <div class="form-group">
+          <label for="lead-email">Email Address</label>
+          <input type="email" id="lead-email" class="form-control" placeholder="sarah@apex.com" required />
+        </div>
+        <div class="form-group">
+          <label for="lead-service">Requested Service</label>
+          <input type="text" id="lead-service" class="form-control" placeholder="e.g. Website Redesign & SEO" required />
+        </div>
+        <div class="form-group">
+          <label for="lead-budget">Estimated Budget ($)</label>
+          <input type="number" id="lead-budget" class="form-control" placeholder="15000" required />
         </div>
         <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
-          <button type="button" class="action-btn" onclick="document.getElementById('ticket-modal').classList.remove('active')">Cancel</button>
-          <button type="submit" class="action-btn primary">Submit Ticket</button>
+          <button type="button" class="action-btn" onclick="document.getElementById('add-lead-modal').classList.remove('active')">Cancel</button>
+          <button type="submit" class="action-btn primary">Save Lead</button>
         </div>
       </form>
     </div>
   </div>
 
-  <script src="js/app.js"></script>
+  <script type="module" src="js/app.js"></script>
 </body>
 </html>

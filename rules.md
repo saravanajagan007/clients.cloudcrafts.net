@@ -1,92 +1,77 @@
-# clients.cloudcrafts.net — Workspace Rules & Guidelines
+# clients.cloudcrafts.net — Multi-Tenant Agency SaaS CRM Platform Architecture
 
-Client Portal & Infrastructure Management Platform for **CloudCrafts**.
-
----
-
-## 1. Project Overview & Scope
-
-`clients.cloudcrafts.net` is the central client dashboard and management portal for CloudCrafts client projects, managed servers, billing, API credentials, and support tickets.
-
-* **Domain:** `clients.cloudcrafts.net`
-* **Purpose:** Provide clients with real-time insight into hosted infrastructure, active deployments, service status, invoices, and direct support.
-* **Target Audience:** CloudCrafts enterprise clients, developers, and project stakeholders.
+Enterprise-ready, multi-tenant SaaS CRM built specifically for:
+* **Website Design Agencies**
+* **Digital Marketing Agencies**
+* **Branding & Creative Agencies**
+* **Software Development Companies & Dev Shops**
+* **Freelancers & Independent Consultants**
+* **IT Service Companies & MSPs**
 
 ---
 
-## 2. Technology Stack & Design Tokens
+## 1. System Architecture & Multi-Tenancy
 
-### Core Technologies
-* **Structure:** Semantic HTML5 (`index.html`, modular layouts)
-* **Styling:** Custom Vanilla CSS design system (`css/styles.css`) with CSS custom properties (variables) for dark glassmorphism styling
-* **Logic:** Modern Vanilla JavaScript (ES6+ modules, `js/app.js`)
-* **Typography:** `Inter` & `Outfit` Google Fonts
-
-### UI Design System Tokens
-```css
-:root {
-  --bg-dark: #090d16;
-  --bg-card: rgba(18, 26, 43, 0.7);
-  --border-glass: rgba(255, 255, 255, 0.08);
-  --accent-primary: #6366f1; /* Indigo */
-  --accent-cyan: #06b6d4;
-  --accent-emerald: #10b981;
-  --accent-purple: #8b5cf6;
-  --text-main: #f3f4f6;
-  --text-muted: #9ca3af;
-}
-```
+### Tenant Isolation Model
+- **Tenant Context (`tenantId`):** All lead pipelines, client records, project milestones, proposals, and billing data are strictly isolated per tenant workspace.
+- **Tenant Switcher:** Instant workspace context switching (e.g. *Apex Web Design Studios*, *Vanguard Digital Marketing*, *Aether Branding Co.*, *PixelCraft Freelance*).
+- **Role-Based Access Control (RBAC):** `Owner`, `Agency Admin`, `Project Manager`, `Account Executive`, `Client Portal User`.
 
 ---
 
-## 3. Project Directory Layout
+## 2. Core Modules & Feature Specifications
+
+### 2.1 Lead & Sales Pipeline (Kanban & List View)
+- Drag-and-drop visual pipeline stages: `New Inquiry` → `Discovery Call` → `Proposal Sent` → `Contract Signed` → `In Onboarding` → `Closed Won/Lost`.
+- Lead scoring, deal value tracking, projected close date, and agency service tagging (Web Design, SEO, Branding, Custom Software, IT Retainer).
+
+### 2.2 Client 360° Lifecycle Management
+- Full client directory with Health Score (`High`, `Medium`, `At Risk`), active retainer status, total LTV, primary contacts, and activity timeline.
+
+### 2.3 Project & Service Delivery Tracker
+- Active client projects, milestone progress bars, deliverables checklist, resource allocation, and deadline monitoring.
+
+### 2.4 Interactive Proposal & Contract Builder
+- Live interactive proposal generator with itemized scope of work, pricing tables, milestone schedules, and simulated digital signature (E-Sign).
+
+### 2.5 Billing, Retainers & Invoicing
+- Recurring retainer tracker, automated invoice status (`Paid`, `Pending`, `Overdue`), invoice generator, and payment link generator.
+
+### 2.6 Client Self-Service Portal View Mode
+- One-click toggle to view the dashboard from the perspective of an end-client (view invoices, sign proposals, approve design proofs, submit change requests).
+
+### 2.7 Agency Performance & Financial Analytics
+- Real-time MRR (Monthly Recurring Revenue), ARR (Annual Recurring Revenue), Average Retainer Value, Win Rate, and Team Utilization.
+
+---
+
+## 3. Directory Layout
 
 ```
 clients.cloudcrafts.net/
-├── index.html            # Main Portal Dashboard HTML
+├── index.html                 # Main App Shell & Multi-View Containers
 ├── css/
-│   └── styles.css        # Core Design System & Glassmorphism Utilities
+│   └── styles.css             # Enterprise Glassmorphism Design System & Kanban Styles
 ├── js/
-│   └── app.js            # Interactive Dashboard Logic & State Management
-├── .gitignore            # Git exclusion rules
-├── .env.example          # Environment variable template
-├── package.json          # Project metadata & npm scripts
-├── README.md             # Project documentation
-└── rules.md              # Architectural & development rules
+│   ├── state.js               # Multi-Tenant Reactive Store & Data Seeds
+│   ├── components/
+│   │   ├── kanban.js          # Pipeline Kanban Drag & Drop Engine
+│   │   ├── proposals.js       # Proposal & Contract Builder Engine
+│   │   ├── billing.js          # Invoicing & Retainer Management
+│   │   ├── clientPortal.js    # End-Client Portal View Simulator
+│   │   └── analytics.js       # Agency Financial & Operational Charts
+│   └── app.js                 # App Controller, Command Palette, Toast Alerts
+├── .gitignore
+├── .env.example
+├── package.json
+├── README.md
+└── rules.md
 ```
 
 ---
 
-## 4. Development & Coding Conventions
+## 4. Design Guidelines & Aesthetics
 
-1. **Clean Modular Components:**
-   - Keep navigation, metrics, server lists, and support tickets clean and modular.
-   - Use dynamic event delegation for interactive elements (tabs, modals, filter chips).
-
-2. **Aesthetic Standards:**
-   - Dark glassmorphism theme by default.
-   - Vibrant indicators for server status (`running`, `warning`, `stopped`).
-   - Smooth micro-animations (`cubic-bezier(0.4, 0, 0.2, 1)` transitions).
-   - High accessibility contrast standards for readable text against dark backgrounds.
-
-3. **No External Heavy UI Frameworks:**
-   - Maintain fast load speed with native CSS grid/flexbox and custom design tokens.
-
----
-
-## 5. Deployment Instructions
-
-* **Static Hosting:** Compatible with Vercel, Netlify, Cloudflare Pages, or Nginx on VPS.
-* **Production Build / Serve:**
-  ```bash
-  npm start
-  ```
-* **Git Repository:** `https://github.com/saravanajagan007/clients.cloudcrafts.net`
-
----
-
-## 6. Rules for Maintenance
-
-* Always verify responsive layout across desktop (1440px+), tablet (768px - 1024px), and mobile (< 768px).
-* Do not hardcode secret API keys in `js/app.js` — always expose via environmental variables or secure client session APIs.
-* Maintain updated status badges and metric simulations for client demonstration.
+- **Dark Glassmorphism Theme:** Background `#070a12`, backdrop filters `blur(16px)`, border glass `rgba(255,255,255,0.08)`.
+- **Vibrant Accent Palette:** Electric Indigo (`#6366f1`), Cyan (`#06b6d4`), Emerald (`#10b981`), Purple (`#8b5cf6`), Amber (`#f59e0b`), Rose (`#f43f5e`).
+- **Interactive Feedback:** Micro-animations for stage dragging, status changes, toast notifications, keyboard shortcuts (`Ctrl/Cmd + K` Command Palette).

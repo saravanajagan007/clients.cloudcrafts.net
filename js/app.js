@@ -1,14 +1,46 @@
-/* clients.cloudcrafts.net — Main Application Logic */
+/* AgencyOS — Main Application Orchestrator & Controller */
+
+import { appStore } from './state.js';
+import { renderKanbanBoard } from './components/kanban.js';
+import { renderProposalBuilder } from './components/proposals.js';
+import { renderAutomationEngine } from './components/automation.js';
+import { renderAiCopilotPanel } from './components/aiCopilot.js';
+import { renderClientPortalView } from './components/clientPortal.js';
+import { initCommandPalette, toggleCommandPalette } from './components/commandPalette.js';
 
 document.addEventListener('DOMContentLoaded', () => {
+  initTenantSelector();
   initNavigation();
-  initServerControls();
-  initApiKeyMasking();
-  initSupportModal();
-  initMetricSimulation();
+  initCommandPalette();
+  initLeadModal();
+  
+  // Initial render of default state
+  renderUI(appStore.getState());
+
+  // Subscribe to state changes
+  appStore.subscribe((state) => {
+    renderUI(state);
+  });
 });
 
-/* Navigation / View Switching */
+/* Multi-Tenant Workspace Selector */
+function initTenantSelector() {
+  const selectEl = document.getElementById('tenant-select');
+  if (!selectEl) return;
+
+  const state = appStore.getState();
+  selectEl.innerHTML = state.tenants.map(tenant => `
+    <option value="${tenant.id}" ${tenant.id === state.activeTenantId ? 'selected' : ''}>
+      ${tenant.logo} ${escapeHtml(tenant.name)}
+    </option>
+  `).join('');
+
+  selectEl.addEventListener('change', (e) => {
+    appStore.setTenant(e.target.value);
+  });
+}
+
+/* View Switching Navigation */
 function initNavigation() {
   const navItems = document.querySelectorAll('.nav-item[data-view]');
   const viewSections = document.querySelectorAll('.view-section');
@@ -28,155 +60,175 @@ function initNavigation() {
           section.classList.remove('active');
         }
       });
+
+      // Lazy render components on view switch
+      if (targetView === 'kanban') {
+        renderKanbanBoard(document.getElementById('kanban-component-container'));
+      } else if (targetView === 'proposals') {
+        renderProposalBuilder(document.getElementById('proposal-builder-container'));
+      } else if (targetView === 'aicopilot') {
+        renderAiCopilotPanel(document.getElementById('aicopilot-view-container'));
+      } else if (targetView === 'automation') {
+        renderAutomationEngine(document.getElementById('automation-view-container'));
+      } else if (targetView === 'clientportal') {
+        renderClientPortalView(document.getElementById('clientportal-view-container'));
+      }
     });
+  });
+
+  // Top bar command palette triggers
+  document.getElementById('btn-cmd-palette')?.addEventListener('click', () => {
+    toggleCommandPalette();
+  });
+
+  document.getElementById('global-search-input')?.addEventListener('click', () => {
+    toggleCommandPalette();
   });
 }
 
-/* Server Power State Toggling */
-function initServerControls() {
-  const powerButtons = document.querySelectorAll('.btn-power-toggle');
+/* Render Main UI Modules */
+function renderUI(state) {
+  const tenant = appStore.getActiveTenant();
 
-  powerButtons.forEach(btn => {
+  // Update Header & Dashboard Metrics
+  const titleEl = document.getElementById('workspace-title-display');
+  if (titleEl) titleEl.textContent = `${tenant.name} Overview`;
+
+  const mrrEl = document.getElementById('dash-mrr');
+  if (mrrEl) mrrEl.textContent = `${tenant.currency}${tenant.mrr.toLocaleString()}`;
+
+  const clientsEl = document.getElementById('dash-clients');
+  if (clientsEl) clientsEl.textContent = tenant.clientsCount;
+
+  const projectsEl = document.getElementById('dash-projects');
+  if (projectsEl) projectsEl.textContent = tenant.activeProjects;
+
+  const teamEl = document.getElementById('dash-team');
+  if (teamEl) teamEl.textContent = `${tenant.teamSize} Members`;
+
+  // Render embedded AI Panel on Dashboard
+  renderAiCopilotPanel(document.getElementById('dashboard-ai-container'));
+
+  // Render Activity Log
+  renderActivityFeed();
+
+  // Render Leads Table
+  renderLeadsTable();
+
+  // Render Clients Table
+  renderClientsTable();
+
+  // Render Invoices Table
+  renderInvoicesTable();
+}
+
+function renderActivityFeed() {
+  const container = document.getElementById('activity-feed-container');
+  if (!container) return;
+
+  const logs = appStore.getActivityLogs();
+  container.innerHTML = logs.map(log => `
+    <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(10, 15, 26, 0.6); padding: 0.85rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-glass);">
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <span style="font-size: 1rem;">
+          ${log.type === 'proposal' ? '✍️' : log.type === 'lead' ? '🎯' : log.type === 'payment' ? '💳' : '🚀'}
+        </span>
+        <span style="font-size: 0.88rem;">${escapeHtml(log.text)}</span>
+      </div>
+      <span style="font-size: 0.78rem; color: var(--text-dim);">${escapeHtml(log.time)}</span>
+    </div>
+  `).join('');
+}
+
+function renderLeadsTable() {
+  const container = document.getElementById('leads-table-body');
+  if (!container) return;
+
+  const leads = appStore.getLeads();
+  container.innerHTML = leads.map(lead => `
+    <tr>
+      <td><strong>${escapeHtml(lead.company)}</strong></td>
+      <td>${escapeHtml(lead.contactName)} (${escapeHtml(lead.email)})</td>
+      <td><span class="service-tag">${escapeHtml(lead.serviceType)}</span></td>
+      <td style="font-weight: 700; color: var(--color-emerald);">$${lead.value.toLocaleString()}</td>
+      <td><span class="score-tag">Score ${lead.score}</span></td>
+      <td><span class="badge badge-warning"><span class="badge-dot"></span> ${escapeHtml(lead.stage)}</span></td>
+    </tr>
+  `).join('');
+}
+
+function renderClientsTable() {
+  const container = document.getElementById('clients-table-body');
+  if (!container) return;
+
+  const clients = appStore.getClients();
+  container.innerHTML = clients.map(client => `
+    <tr>
+      <td><strong>${escapeHtml(client.name)}</strong></td>
+      <td>${escapeHtml(client.industry)}</td>
+      <td>${escapeHtml(client.primaryContact)} (${escapeHtml(client.contactEmail)})</td>
+      <td><span class="badge ${client.health === 'High' ? 'badge-success' : 'badge-warning'}"><span class="badge-dot"></span> ${client.health}</span></td>
+      <td style="font-weight: 600;">$${client.retainerMonthly.toLocaleString()} / mo</td>
+      <td style="font-weight: 700; color: var(--color-emerald);">$${client.ltv.toLocaleString()}</td>
+    </tr>
+  `).join('');
+}
+
+function renderInvoicesTable() {
+  const container = document.getElementById('invoices-table-body');
+  if (!container) return;
+
+  const invoices = appStore.getInvoices();
+  container.innerHTML = invoices.map(inv => `
+    <tr>
+      <td><strong>#${escapeHtml(inv.id)}</strong></td>
+      <td>${escapeHtml(inv.clientName)}</td>
+      <td>${escapeHtml(inv.description)}</td>
+      <td style="font-weight: 700; color: var(--color-emerald);">$${inv.amount.toLocaleString()}</td>
+      <td>${escapeHtml(inv.dueDate)}</td>
+      <td><span class="badge ${inv.status === 'Paid' ? 'badge-success' : inv.status === 'Pending' ? 'badge-warning' : 'badge-danger'}"><span class="badge-dot"></span> ${inv.status}</span></td>
+    </tr>
+  `).join('');
+}
+
+/* Modal Lead Handling */
+function initLeadModal() {
+  const modal = document.getElementById('add-lead-modal');
+  const openBtns = [document.getElementById('btn-quick-lead'), document.getElementById('btn-add-lead-kanban')].filter(Boolean);
+  const form = document.getElementById('add-lead-form');
+
+  openBtns.forEach(btn => {
     btn.addEventListener('click', () => {
-      const row = btn.closest('tr');
-      const badge = row.querySelector('.badge');
-      const isRunning = badge.classList.contains('badge-success');
-
-      if (isRunning) {
-        badge.className = 'badge badge-danger';
-        badge.innerHTML = '<span class="badge-dot"></span> Stopped';
-        btn.textContent = 'Start';
-        btn.className = 'action-btn btn-sm primary';
-      } else {
-        badge.className = 'badge badge-success';
-        badge.innerHTML = '<span class="badge-dot"></span> Running';
-        btn.textContent = 'Restart';
-        btn.className = 'action-btn btn-sm';
-      }
-    });
-  });
-}
-
-/* API Key Reveal & Copy */
-function initApiKeyMasking() {
-  const toggleBtns = document.querySelectorAll('.btn-key-toggle');
-  const copyBtns = document.querySelectorAll('.btn-key-copy');
-
-  toggleBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const container = btn.closest('.key-item');
-      const keyText = container.querySelector('.key-value');
-      const isMasked = keyText.getAttribute('data-masked') === 'true';
-
-      if (isMasked) {
-        keyText.textContent = keyText.getAttribute('data-secret');
-        keyText.setAttribute('data-masked', 'false');
-        btn.textContent = 'Hide';
-      } else {
-        keyText.textContent = '••••••••••••••••••••••••••••••••';
-        keyText.setAttribute('data-masked', 'true');
-        btn.textContent = 'Show';
-      }
+      modal.classList.add('active');
     });
   });
 
-  copyBtns.forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const container = btn.closest('.key-item');
-      const secret = container.querySelector('.key-value').getAttribute('data-secret');
-
-      try {
-        await navigator.clipboard.writeText(secret);
-        const origText = btn.textContent;
-        btn.textContent = 'Copied!';
-        setTimeout(() => {
-          btn.textContent = origText;
-        }, 1500);
-      } catch {
-        alert('Failed to copy API Key.');
-      }
-    });
-  });
-}
-
-/* Support Ticket Modal */
-function initSupportModal() {
-  const modalBackdrop = document.getElementById('ticket-modal');
-  const openModalBtn = document.getElementById('btn-new-ticket');
-  const closeModalBtn = document.getElementById('btn-close-modal');
-  const ticketForm = document.getElementById('ticket-form');
-  const ticketsTable = document.getElementById('tickets-body');
-
-  if (openModalBtn) {
-    openModalBtn.addEventListener('click', () => {
-      modalBackdrop.classList.add('active');
-    });
-  }
-
-  if (closeModalBtn) {
-    closeModalBtn.addEventListener('click', () => {
-      modalBackdrop.classList.remove('active');
-    });
-  }
-
-  if (modalBackdrop) {
-    modalBackdrop.addEventListener('click', (e) => {
-      if (e.target === modalBackdrop) {
-        modalBackdrop.classList.remove('active');
-      }
-    });
-  }
-
-  if (ticketForm) {
-    ticketForm.addEventListener('submit', (e) => {
+  if (form) {
+    form.addEventListener('submit', (e) => {
       e.preventDefault();
-      const subject = document.getElementById('ticket-subject').value;
-      const category = document.getElementById('ticket-category').value;
+      const company = document.getElementById('lead-company').value;
+      const contactName = document.getElementById('lead-contact').value;
+      const email = document.getElementById('lead-email').value;
+      const serviceType = document.getElementById('lead-service').value;
+      const value = parseFloat(document.getElementById('lead-budget').value) || 0;
 
-      if (!subject) return;
+      appStore.addLead({
+        company,
+        contactName,
+        email,
+        serviceType,
+        value,
+        stage: 'new-inquiry'
+      });
 
-      const ticketId = `TK-${Math.floor(1000 + Math.random() * 9000)}`;
-      const dateStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-
-      const newRow = document.createElement('tr');
-      newRow.innerHTML = `
-        <td><strong>#${ticketId}</strong></td>
-        <td>${escapeHtml(subject)}</td>
-        <td><span class="badge badge-warning"><span class="badge-dot"></span> Open</span></td>
-        <td>${category}</td>
-        <td>${dateStr}</td>
-        <td><button class="action-btn btn-sm">View</button></td>
-      `;
-
-      ticketsTable.insertBefore(newRow, ticketsTable.firstChild);
-
-      ticketForm.reset();
-      modalBackdrop.classList.remove('active');
+      form.reset();
+      modal.classList.remove('active');
     });
   }
-}
-
-/* Dynamic Live Metric Fluctuation Simulation */
-function initMetricSimulation() {
-  const cpuVal = document.getElementById('metric-cpu');
-  const ramVal = document.getElementById('metric-ram');
-
-  setInterval(() => {
-    if (cpuVal) {
-      const currentCpu = parseInt(cpuVal.textContent);
-      const newCpu = Math.max(12, Math.min(88, currentCpu + (Math.floor(Math.random() * 7) - 3)));
-      cpuVal.textContent = `${newCpu}%`;
-    }
-
-    if (ramVal) {
-      const currentRam = parseFloat(ramVal.textContent);
-      const newRam = (Math.max(8.0, Math.min(28.0, currentRam + (Math.random() * 0.4 - 0.2)))).toFixed(1);
-      ramVal.textContent = `${newRam} GB`;
-    }
-  }, 4000);
 }
 
 function escapeHtml(str) {
+  if (!str) return '';
   return str.replace(/[&<>'"]/g, 
     tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
   );
