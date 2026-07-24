@@ -1,19 +1,22 @@
 {
   "name": "clients.cloudcrafts.net",
   "version": "1.0.0",
-  "description": "Premium Client Portal and Infrastructure Dashboard for CloudCrafts",
-  "main": "index.html",
+  "description": "Enterprise Multi-Tenant SaaS CRM & Agency Operating System",
+  "main": "server.js",
   "type": "module",
   "scripts": {
-    "start": "npx serve .",
-    "dev": "npx serve ."
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2"
   },
   "keywords": [
-    "cloudcrafts",
-    "client-portal",
-    "dashboard",
-    "cloud-infrastructure",
-    "saas"
+    "agencyos",
+    "saas",
+    "crm",
+    "cloudcrafts"
   ],
   "author": "Saravana Jagan",
   "license": "ISC"

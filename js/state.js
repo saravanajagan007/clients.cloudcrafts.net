@@ -1,4 +1,6 @@
-/* AgencyOS — Multi-Tenant Production-Grade State & Data Store with Auth, Multi-Currency, & LocalStorage Persistence */
+/* AgencyOS — Multi-Tenant Production-Grade State & Data Store with Auth, Multi-Currency, LocalStorage & Backend Database API */
+
+import { createLeadApi, updateLeadStageApi, loginApi } from './api.js';
 
 const AUTH_STORAGE_KEY = 'agencyos_auth_session';
 const STATE_STORAGE_KEY = 'agencyos_app_state';
@@ -110,6 +112,7 @@ class Store {
       this.state.currentUser = user;
       localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
       this.addActivityLog('User Saravana Jagan logged in successfully', 'info');
+      loginApi(email, password).catch(() => {});
       this.notify();
       return { success: true };
     }
@@ -191,6 +194,10 @@ class Store {
     this.state.leads.unshift(newLead);
     this.addActivityLog(`New lead captured: ${newLead.company} (${newLead.currencySymbol}${newLead.value.toLocaleString()})`, 'lead');
     this.saveState();
+
+    // Store in backend database API
+    createLeadApi(newLead).catch(() => {});
+
     this.notify();
     return newLead;
   }
@@ -202,6 +209,10 @@ class Store {
       lead.updatedAt = new Date().toISOString().split('T')[0];
       this.addActivityLog(`Lead "${lead.company}" moved to ${newStage.replace('-', ' ')}`, 'lead');
       this.saveState();
+
+      // Sync stage update with backend database API
+      updateLeadStageApi(leadId, newStage).catch(() => {});
+
       this.notify();
     }
   }
