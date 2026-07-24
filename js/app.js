@@ -1,6 +1,6 @@
 /* AgencyOS — Main Application Orchestrator & Controller */
 
-import { appStore } from './state.js';
+import { appStore, CURRENCIES } from './state.js';
 import { renderKanbanBoard } from './components/kanban.js';
 import { renderProposalBuilder } from './components/proposals.js';
 import { renderAutomationEngine } from './components/automation.js';
@@ -16,6 +16,7 @@ import { initCommandPalette, toggleCommandPalette } from './components/commandPa
 document.addEventListener('DOMContentLoaded', () => {
   initAuthGuard();
   initTenantSelector();
+  initCurrencySelector();
   initNavigation();
   initCommandPalette();
   initLeadModal();
@@ -94,6 +95,19 @@ function initTenantSelector() {
   });
 }
 
+/* Currency Selector Handler */
+function initCurrencySelector() {
+  const selectEl = document.getElementById('global-currency-select');
+  if (!selectEl) return;
+
+  const tenant = appStore.getActiveTenant();
+  selectEl.value = tenant.currency || 'INR';
+
+  selectEl.addEventListener('change', (e) => {
+    appStore.setTenantCurrency(e.target.value);
+  });
+}
+
 /* View Switching Navigation */
 function initNavigation() {
   const navItems = document.querySelectorAll('.nav-item[data-view]');
@@ -165,12 +179,16 @@ function initNavigation() {
 function renderUI(state) {
   const tenant = appStore.getActiveTenant();
 
+  // Update Currency Select Sync
+  const currSelect = document.getElementById('global-currency-select');
+  if (currSelect) currSelect.value = tenant.currency || 'INR';
+
   // Update Header & Dashboard Metrics
   const titleEl = document.getElementById('workspace-title-display');
   if (titleEl) titleEl.textContent = `${tenant.name} Overview`;
 
   const mrrEl = document.getElementById('dash-mrr');
-  if (mrrEl) mrrEl.textContent = `${tenant.currency}${tenant.mrr.toLocaleString()}`;
+  if (mrrEl) mrrEl.textContent = `${tenant.currencySymbol}${tenant.mrr.toLocaleString()}`;
 
   const clientsEl = document.getElementById('dash-clients');
   if (clientsEl) clientsEl.textContent = tenant.clientsCount;
@@ -179,7 +197,7 @@ function renderUI(state) {
   if (projectsEl) projectsEl.textContent = tenant.activeProjects;
 
   const teamEl = document.getElementById('dash-team');
-  if (teamEl) teamEl.textContent = `${tenant.teamSize} Members`;
+  if (teamEl) teamEl.textContent = `${tenant.teamSize} Member`;
 
   // Render embedded AI Panel on Dashboard
   renderAiCopilotPanel(document.getElementById('dashboard-ai-container'));
@@ -247,7 +265,7 @@ function renderLeadsTable() {
       <td><strong>${escapeHtml(lead.company)}</strong></td>
       <td>${escapeHtml(lead.contactName)} (${escapeHtml(lead.email)})</td>
       <td><span class="service-tag">${escapeHtml(lead.serviceType)}</span></td>
-      <td style="font-weight: 700; color: var(--color-emerald);">$${lead.value.toLocaleString()}</td>
+      <td style="font-weight: 700; color: var(--color-emerald);">${lead.currencySymbol || '₹'}${lead.value.toLocaleString()}</td>
       <td><span class="score-tag">Score ${lead.score}</span></td>
       <td><span class="badge badge-warning"><span class="badge-dot"></span> ${escapeHtml(lead.stage)}</span></td>
     </tr>
@@ -259,6 +277,7 @@ function renderClientsTable() {
   if (!container) return;
 
   const clients = appStore.getClients();
+  const tenant = appStore.getActiveTenant();
 
   if (clients.length === 0) {
     container.innerHTML = `
@@ -277,8 +296,8 @@ function renderClientsTable() {
       <td>${escapeHtml(client.industry)}</td>
       <td>${escapeHtml(client.primaryContact)} (${escapeHtml(client.contactEmail)})</td>
       <td><span class="badge ${client.health === 'High' ? 'badge-success' : 'badge-warning'}"><span class="badge-dot"></span> ${client.health}</span></td>
-      <td style="font-weight: 600;">$${client.retainerMonthly.toLocaleString()} / mo</td>
-      <td style="font-weight: 700; color: var(--color-emerald);">$${client.ltv.toLocaleString()}</td>
+      <td style="font-weight: 600;">${tenant.currencySymbol}${client.retainerMonthly.toLocaleString()} / mo</td>
+      <td style="font-weight: 700; color: var(--color-emerald);">${tenant.currencySymbol}${client.ltv.toLocaleString()}</td>
     </tr>
   `).join('');
 }
@@ -305,7 +324,7 @@ function renderInvoicesTable() {
       <td><strong>#${escapeHtml(inv.id)}</strong></td>
       <td>${escapeHtml(inv.clientName)}</td>
       <td>${escapeHtml(inv.description)}</td>
-      <td style="font-weight: 700; color: var(--color-emerald);">$${inv.amount.toLocaleString()}</td>
+      <td style="font-weight: 700; color: var(--color-emerald);">${inv.currencySymbol || '₹'}${inv.amount.toLocaleString()}</td>
       <td>${escapeHtml(inv.dueDate)}</td>
       <td><span class="badge ${inv.status === 'Paid' ? 'badge-success' : inv.status === 'Pending' ? 'badge-warning' : 'badge-danger'}"><span class="badge-dot"></span> ${inv.status}</span></td>
     </tr>
@@ -331,7 +350,10 @@ function initLeadModal() {
       const contactName = document.getElementById('lead-contact').value;
       const email = document.getElementById('lead-email').value;
       const serviceType = document.getElementById('lead-service').value;
+      const currencyCode = document.getElementById('lead-currency').value;
       const value = parseFloat(document.getElementById('lead-budget').value) || 0;
+
+      const currObj = CURRENCIES.find(c => c.code === currencyCode) || CURRENCIES[0];
 
       appStore.addLead({
         company,
@@ -339,6 +361,7 @@ function initLeadModal() {
         email,
         serviceType,
         value,
+        currencySymbol: currObj.symbol,
         stage: 'new-inquiry'
       });
 

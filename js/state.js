@@ -1,6 +1,18 @@
-/* AgencyOS — Multi-Tenant Production-Grade State & Data Store with Auth */
+/* AgencyOS — Multi-Tenant Production-Grade State & Data Store with Auth & Multi-Currency */
 
 const AUTH_STORAGE_KEY = 'agencyos_auth_session';
+
+export const CURRENCIES = [
+  { code: 'INR', symbol: '₹', name: 'INR (₹) — Indian Rupee' },
+  { code: 'USD', symbol: '$', name: 'USD ($) — US Dollar' },
+  { code: 'EUR', symbol: '€', name: 'EUR (€) — Euro' },
+  { code: 'GBP', symbol: '£', name: 'GBP (£) — British Pound' },
+  { code: 'AED', symbol: 'AED ', name: 'AED (AED) — UAE Dirham' },
+  { code: 'SGD', symbol: 'S$', name: 'SGD (S$) — Singapore Dollar' },
+  { code: 'AUD', symbol: 'A$', name: 'AUD (A$) — Australian Dollar' },
+  { code: 'CAD', symbol: 'C$', name: 'CAD (C$) — Canadian Dollar' },
+  { code: 'JPY', symbol: '¥', name: 'JPY (¥) — Japanese Yen' }
+];
 
 export const INITIAL_STATE = {
   activeTenantId: 'tenant-default',
@@ -13,7 +25,8 @@ export const INITIAL_STATE = {
       name: 'AgencyOS Workspace',
       type: 'Website Design & Software Agency',
       logo: '⚡',
-      currency: '$',
+      currency: 'INR',
+      currencySymbol: '₹',
       mrr: 0,
       clientsCount: 0,
       activeProjects: 0,
@@ -82,7 +95,18 @@ class Store {
   }
 
   getActiveTenant() {
-    return this.state.tenants.find(t => t.id === this.state.activeTenantId) || this.state.tenants[0];
+    const t = this.state.tenants.find(t => t.id === this.state.activeTenantId) || this.state.tenants[0];
+    const curr = CURRENCIES.find(c => c.code === t.currency) || CURRENCIES[0];
+    return { ...t, currencySymbol: curr.symbol };
+  }
+
+  setTenantCurrency(currencyCode) {
+    const tenant = this.getActiveTenant();
+    const curr = CURRENCIES.find(c => c.code === currencyCode) || CURRENCIES[0];
+    tenant.currency = curr.code;
+    tenant.currencySymbol = curr.symbol;
+    this.addActivityLog(`Workspace primary currency updated to ${curr.name}`, 'info');
+    this.notify();
   }
 
   setTenant(tenantId) {
@@ -119,16 +143,18 @@ class Store {
   }
 
   addLead(leadData) {
+    const tenant = this.getActiveTenant();
     const newLead = {
       id: `lead-${Date.now()}`,
       tenantId: this.state.activeTenantId,
+      currencySymbol: leadData.currencySymbol || tenant.currencySymbol,
       score: 85,
       probability: '50%',
       updatedAt: new Date().toISOString().split('T')[0],
       ...leadData
     };
     this.state.leads.unshift(newLead);
-    this.addActivityLog(`New lead captured: ${newLead.company}`, 'lead');
+    this.addActivityLog(`New lead captured: ${newLead.company} (${newLead.currencySymbol}${newLead.value.toLocaleString()})`, 'lead');
     this.notify();
     return newLead;
   }
@@ -144,29 +170,33 @@ class Store {
   }
 
   addProposal(proposalData) {
+    const tenant = this.getActiveTenant();
     const newProp = {
       id: `prop-${Math.floor(100 + Math.random() * 899)}`,
       tenantId: this.state.activeTenantId,
+      currencySymbol: proposalData.currencySymbol || tenant.currencySymbol,
       status: 'Sent',
       createdDate: new Date().toISOString().split('T')[0],
       ...proposalData
     };
     this.state.proposals.unshift(newProp);
-    this.addActivityLog(`Created proposal for ${newProp.clientName} ($${newProp.amount.toLocaleString()})`, 'proposal');
+    this.addActivityLog(`Created proposal for ${newProp.clientName} (${newProp.currencySymbol}${newProp.amount.toLocaleString()})`, 'proposal');
     this.notify();
     return newProp;
   }
 
   addInvoice(invoiceData) {
+    const tenant = this.getActiveTenant();
     const newInv = {
       id: `INV-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 899)}`,
       tenantId: this.state.activeTenantId,
+      currencySymbol: invoiceData.currencySymbol || tenant.currencySymbol,
       status: 'Pending',
       issuedDate: new Date().toISOString().split('T')[0],
       ...invoiceData
     };
     this.state.invoices.unshift(newInv);
-    this.addActivityLog(`Issued invoice ${newInv.id} to ${newInv.clientName} ($${newInv.amount.toLocaleString()})`, 'payment');
+    this.addActivityLog(`Issued invoice ${newInv.id} to ${newInv.clientName} (${newInv.currencySymbol}${newInv.amount.toLocaleString()})`, 'payment');
     this.notify();
     return newInv;
   }

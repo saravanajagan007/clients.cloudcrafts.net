@@ -5,6 +5,7 @@ export function renderKanbanBoard(containerEl) {
   if (!containerEl) return;
 
   const leads = appStore.getLeads();
+  const tenant = appStore.getActiveTenant();
   const stages = [
     { id: 'new-inquiry', title: 'New Inquiry', probability: '25%', color: '#06b6d4' },
     { id: 'discovery-call', title: 'Discovery Call', probability: '50%', color: '#6366f1' },
@@ -20,7 +21,7 @@ export function renderKanbanBoard(containerEl) {
     <div class="kanban-header-bar">
       <div>
         <h3 style="font-family: var(--font-heading); font-size: 1.25rem;">Sales Pipeline Kanban</h3>
-        <p style="color: var(--text-muted); font-size: 0.85rem;">Total Weighted Pipeline: <strong style="color: var(--color-emerald);">$${totalPipelineValue.toLocaleString()}</strong> (${leads.length} active leads)</p>
+        <p style="color: var(--text-muted); font-size: 0.85rem;">Total Weighted Pipeline: <strong style="color: var(--color-emerald);">${tenant.currencySymbol}${totalPipelineValue.toLocaleString()}</strong> (${leads.length} active leads)</p>
       </div>
       <button class="action-btn primary" onclick="document.getElementById('add-lead-modal').classList.add('active')">+ Add Lead</button>
     </div>
@@ -37,7 +38,7 @@ export function renderKanbanBoard(containerEl) {
                 <span class="column-name">${stage.title}</span>
                 <span class="column-count">${stageLeads.length}</span>
               </div>
-              <div class="column-value">$${stageVal.toLocaleString()} · ${stage.probability} win prob</div>
+              <div class="column-value">${tenant.currencySymbol}${stageVal.toLocaleString()} · ${stage.probability} win prob</div>
             </div>
 
             <div class="kanban-cards-container" data-stage="${stage.id}">
@@ -55,7 +56,7 @@ export function renderKanbanBoard(containerEl) {
                   <p class="card-contact">👤 ${escapeHtml(lead.contactName)} (${escapeHtml(lead.email)})</p>
                   
                   <div class="card-footer">
-                    <span class="card-value">$${(lead.value || 0).toLocaleString()}</span>
+                    <span class="card-value">${lead.currencySymbol || tenant.currencySymbol}${(lead.value || 0).toLocaleString()}</span>
                     <span class="card-owner">${lead.assignedTo ? lead.assignedTo.split(' ')[0] : 'Unassigned'}</span>
                   </div>
                 </div>
