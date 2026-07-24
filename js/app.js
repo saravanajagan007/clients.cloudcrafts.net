@@ -14,6 +14,7 @@ import { renderIntegrationsHub } from './components/integrations.js';
 import { initCommandPalette, toggleCommandPalette } from './components/commandPalette.js';
 
 document.addEventListener('DOMContentLoaded', () => {
+  initAuthGuard();
   initTenantSelector();
   initNavigation();
   initCommandPalette();
@@ -27,6 +28,54 @@ document.addEventListener('DOMContentLoaded', () => {
     renderUI(state);
   });
 });
+
+/* Authentication Protection Guard */
+function initAuthGuard() {
+  const authScreen = document.getElementById('auth-screen');
+  const protectedApp = document.getElementById('protected-app');
+  const loginForm = document.getElementById('login-form');
+  const errorAlert = document.getElementById('auth-error-alert');
+  const logoutBtn = document.getElementById('btn-logout');
+
+  function updateAuthDisplay() {
+    const state = appStore.getState();
+    if (state.isAuthenticated) {
+      if (authScreen) authScreen.style.display = 'none';
+      if (protectedApp) protectedApp.style.display = 'flex';
+    } else {
+      if (authScreen) authScreen.style.display = 'flex';
+      if (protectedApp) protectedApp.style.display = 'none';
+    }
+  }
+
+  if (loginForm) {
+    loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+
+      const result = appStore.login(email, password);
+      if (result.success) {
+        if (errorAlert) errorAlert.style.display = 'none';
+        updateAuthDisplay();
+      } else {
+        if (errorAlert) {
+          errorAlert.textContent = result.message;
+          errorAlert.style.display = 'block';
+        }
+      }
+    });
+  }
+
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+      appStore.logout();
+      updateAuthDisplay();
+    });
+  }
+
+  updateAuthDisplay();
+}
 
 /* Multi-Tenant Workspace Selector */
 function initTenantSelector() {

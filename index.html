@@ -9,7 +9,41 @@
 </head>
 <body>
 
-  <div class="app-container">
+  <!-- Auth Screen Backdrop (Displayed if not authenticated) -->
+  <div class="auth-screen-backdrop" id="auth-screen">
+    <div class="auth-card">
+      <div class="auth-brand">
+        <div class="brand-icon">⚡</div>
+        <div class="brand-text">
+          <h1>AgencyOS</h1>
+          <p>ENTERPRISE SAAS LOGIN</p>
+        </div>
+      </div>
+
+      <div class="auth-alert" id="auth-error-alert" style="display: none;"></div>
+
+      <form id="login-form">
+        <div class="form-group">
+          <label for="login-email">Email Address</label>
+          <input type="email" id="login-email" class="form-control" value="saravanajagan@gmail.com" required placeholder="saravanajagan@gmail.com" />
+        </div>
+        <div class="form-group">
+          <label for="login-password">Password</label>
+          <input type="password" id="login-password" class="form-control" value="Goldwinner007#" required placeholder="••••••••••••" />
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; font-size: 0.8rem; color: var(--text-muted);">
+          <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+            <input type="checkbox" checked style="accent-color: var(--color-primary);" /> Remember session
+          </label>
+          <a href="#" style="color: var(--color-cyan); text-decoration: none;" onclick="alert('Demo reset instructions: Email is saravanajagan@gmail.com and password is Goldwinner007#')">Forgot password?</a>
+        </div>
+        <button type="submit" class="action-btn primary" style="width: 100%; justify-content: center; padding: 0.75rem;">Sign In to AgencyOS Workspace ➔</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Protected Application Container -->
+  <div class="app-container" id="protected-app" style="display: none;">
     <!-- Sidebar Navigation -->
     <aside class="sidebar">
       <div class="brand">
@@ -108,11 +142,14 @@
       </nav>
 
       <div class="user-profile">
-        <div class="avatar">SJ</div>
-        <div class="user-info">
-          <h4>Saravana Jagan</h4>
-          <p id="user-role-badge">Agency Owner</p>
+        <div class="user-profile-left">
+          <div class="avatar">SJ</div>
+          <div class="user-info">
+            <h4>Saravana Jagan</h4>
+            <p id="user-role-badge">Agency Owner</p>
+          </div>
         </div>
+        <button class="btn-logout" id="btn-logout" title="Sign out">🚪</button>
       </div>
     </aside>
 

@@ -1,7 +1,11 @@
-/* AgencyOS — Multi-Tenant Production-Grade State & Data Store */
+/* AgencyOS — Multi-Tenant Production-Grade State & Data Store with Auth */
+
+const AUTH_STORAGE_KEY = 'agencyos_auth_session';
 
 export const INITIAL_STATE = {
   activeTenantId: 'tenant-default',
+  isAuthenticated: false,
+  currentUser: null,
 
   tenants: [
     {
@@ -30,6 +34,47 @@ class Store {
   constructor(initialData) {
     this.state = JSON.parse(JSON.stringify(initialData));
     this.listeners = [];
+    this.checkSession();
+  }
+
+  checkSession() {
+    try {
+      const stored = localStorage.getItem(AUTH_STORAGE_KEY);
+      if (stored) {
+        const session = JSON.parse(stored);
+        if (session && session.email === 'saravanajagan@gmail.com') {
+          this.state.isAuthenticated = true;
+          this.state.currentUser = session;
+        }
+      }
+    } catch {
+      this.state.isAuthenticated = false;
+    }
+  }
+
+  login(email, password) {
+    if (email === 'saravanajagan@gmail.com' && password === 'Goldwinner007#') {
+      const user = {
+        name: 'Saravana Jagan',
+        email: 'saravanajagan@gmail.com',
+        role: 'Agency Owner',
+        loggedInAt: new Date().toISOString()
+      };
+      this.state.isAuthenticated = true;
+      this.state.currentUser = user;
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+      this.addActivityLog('User Saravana Jagan logged in successfully', 'info');
+      this.notify();
+      return { success: true };
+    }
+    return { success: false, message: 'Invalid credentials. Please check email and password.' };
+  }
+
+  logout() {
+    this.state.isAuthenticated = false;
+    this.state.currentUser = null;
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+    this.notify();
   }
 
   getState() {
