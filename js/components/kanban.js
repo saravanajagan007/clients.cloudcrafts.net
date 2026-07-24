@@ -22,7 +22,7 @@ export function renderKanbanBoard(containerEl) {
         <h3 style="font-family: var(--font-heading); font-size: 1.25rem;">Sales Pipeline Kanban</h3>
         <p style="color: var(--text-muted); font-size: 0.85rem;">Total Weighted Pipeline: <strong style="color: var(--color-emerald);">$${totalPipelineValue.toLocaleString()}</strong> (${leads.length} active leads)</p>
       </div>
-      <button class="action-btn primary" id="btn-add-lead-kanban">+ Add Lead</button>
+      <button class="action-btn primary" onclick="document.getElementById('add-lead-modal').classList.add('active')">+ Add Lead</button>
     </div>
 
     <div class="kanban-board">
@@ -41,10 +41,14 @@ export function renderKanbanBoard(containerEl) {
             </div>
 
             <div class="kanban-cards-container" data-stage="${stage.id}">
-              ${stageLeads.map(lead => `
+              ${stageLeads.length === 0 ? `
+                <div style="padding: 1.5rem 0.5rem; text-align: center; color: var(--text-dim); font-size: 0.8rem; border: 1px dashed var(--border-glass); border-radius: var(--radius-sm);">
+                  No leads in stage
+                </div>
+              ` : stageLeads.map(lead => `
                 <div class="kanban-card" draggable="true" data-lead-id="${lead.id}">
                   <div class="card-tags">
-                    <span class="service-tag">${lead.serviceType || 'Web Agency Service'}</span>
+                    <span class="service-tag">${lead.serviceType || 'Agency Service'}</span>
                     <span class="score-tag">Score ${lead.score}</span>
                   </div>
                   <h4 class="card-company">${escapeHtml(lead.company)}</h4>

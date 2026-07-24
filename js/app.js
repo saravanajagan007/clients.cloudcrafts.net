@@ -153,6 +153,16 @@ function renderActivityFeed() {
   if (!container) return;
 
   const logs = appStore.getActivityLogs();
+
+  if (logs.length === 0) {
+    container.innerHTML = `
+      <div style="padding: 1.5rem; text-align: center; color: var(--text-muted); font-size: 0.85rem;">
+        No activity recorded yet. Add a new lead or proposal to see real-time updates!
+      </div>
+    `;
+    return;
+  }
+
   container.innerHTML = logs.map(log => `
     <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(10, 15, 26, 0.6); padding: 0.85rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-glass);">
       <div style="display: flex; align-items: center; gap: 0.75rem;">
@@ -171,6 +181,18 @@ function renderLeadsTable() {
   if (!container) return;
 
   const leads = appStore.getLeads();
+
+  if (leads.length === 0) {
+    container.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+          No leads captured yet. Click <strong>+ Add Lead</strong> above to record a new inquiry.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
   container.innerHTML = leads.map(lead => `
     <tr>
       <td><strong>${escapeHtml(lead.company)}</strong></td>
@@ -188,6 +210,18 @@ function renderClientsTable() {
   if (!container) return;
 
   const clients = appStore.getClients();
+
+  if (clients.length === 0) {
+    container.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+          No clients registered yet. Closed leads will automatically populate your Client 360° directory.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
   container.innerHTML = clients.map(client => `
     <tr>
       <td><strong>${escapeHtml(client.name)}</strong></td>
@@ -205,6 +239,18 @@ function renderInvoicesTable() {
   if (!container) return;
 
   const invoices = appStore.getInvoices();
+
+  if (invoices.length === 0) {
+    container.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+          No invoices issued yet. Create a proposal or project to issue milestone & retainer invoices.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
   container.innerHTML = invoices.map(inv => `
     <tr>
       <td><strong>#${escapeHtml(inv.id)}</strong></td>
