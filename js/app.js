@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initCurrencySelector();
   initNavigation();
   initCommandPalette();
-  initLeadModal();
+  initGlobalLeadModal();
   
   // Initial render of default state
   renderUI(appStore.getState());
@@ -29,6 +29,26 @@ document.addEventListener('DOMContentLoaded', () => {
     renderUI(state);
   });
 });
+
+/* Toast Notification Utility */
+export function showToast(message, icon = '✅') {
+  let container = document.getElementById('toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toast-container';
+    container.className = 'toast-container';
+    document.body.appendChild(container);
+  }
+
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.innerHTML = `<span>${icon}</span> <span>${escapeHtml(message)}</span>`;
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.remove();
+  }, 3500);
+}
 
 /* Authentication Protection Guard */
 function initAuthGuard() {
@@ -59,6 +79,7 @@ function initAuthGuard() {
       if (result.success) {
         if (errorAlert) errorAlert.style.display = 'none';
         updateAuthDisplay();
+        showToast('Welcome back, Saravana Jagan! Workspaces active.', '👋');
       } else {
         if (errorAlert) {
           errorAlert.textContent = result.message;
@@ -92,6 +113,7 @@ function initTenantSelector() {
 
   selectEl.addEventListener('change', (e) => {
     appStore.setTenant(e.target.value);
+    showToast(`Switched workspace to ${appStore.getActiveTenant().name}`, '⚡');
   });
 }
 
@@ -105,6 +127,7 @@ function initCurrencySelector() {
 
   selectEl.addEventListener('change', (e) => {
     appStore.setTenantCurrency(e.target.value);
+    showToast(`Primary currency set to ${e.target.value}`, '💱');
   });
 }
 
@@ -173,6 +196,60 @@ function initNavigation() {
   document.getElementById('global-search-input')?.addEventListener('click', () => {
     toggleCommandPalette();
   });
+}
+
+/* Global Lead Modal & Submission Handler */
+function initGlobalLeadModal() {
+  const modal = document.getElementById('add-lead-modal');
+  const form = document.getElementById('add-lead-form');
+
+  // Event delegation to catch clicks on any Add Lead trigger
+  document.addEventListener('click', (e) => {
+    const trigger = e.target.closest('#btn-quick-lead, #btn-add-lead-kanban, .btn-open-add-lead');
+    if (trigger && modal) {
+      modal.classList.add('active');
+    }
+  });
+
+  if (form) {
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const company = document.getElementById('lead-company')?.value.trim();
+      const contactName = document.getElementById('lead-contact')?.value.trim();
+      const email = document.getElementById('lead-email')?.value.trim();
+      const serviceType = document.getElementById('lead-service')?.value.trim();
+      const currencyCode = document.getElementById('lead-currency')?.value || 'INR';
+      const value = parseFloat(document.getElementById('lead-budget')?.value) || 0;
+
+      if (!company || !contactName) {
+        alert('Please provide Company Name and Contact Person.');
+        return;
+      }
+
+      const currObj = CURRENCIES.find(c => c.code === currencyCode) || CURRENCIES[0];
+
+      appStore.addLead({
+        company,
+        contactName,
+        email,
+        serviceType,
+        value,
+        currencySymbol: currObj.symbol,
+        stage: 'new-inquiry'
+      });
+
+      form.reset();
+      if (modal) modal.classList.remove('active');
+
+      showToast(`Lead "${company}" saved successfully!`, '🎯');
+
+      // Re-render kanban if currently visible
+      const kanbanContainer = document.getElementById('kanban-component-container');
+      if (kanbanContainer && kanbanContainer.offsetParent !== null) {
+        renderKanbanBoard(kanbanContainer);
+      }
+    });
+  }
 }
 
 /* Render Main UI Modules */
@@ -329,46 +406,6 @@ function renderInvoicesTable() {
       <td><span class="badge ${inv.status === 'Paid' ? 'badge-success' : inv.status === 'Pending' ? 'badge-warning' : 'badge-danger'}"><span class="badge-dot"></span> ${inv.status}</span></td>
     </tr>
   `).join('');
-}
-
-/* Modal Lead Handling */
-function initLeadModal() {
-  const modal = document.getElementById('add-lead-modal');
-  const openBtns = [document.getElementById('btn-quick-lead'), document.getElementById('btn-add-lead-kanban')].filter(Boolean);
-  const form = document.getElementById('add-lead-form');
-
-  openBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      modal.classList.add('active');
-    });
-  });
-
-  if (form) {
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const company = document.getElementById('lead-company').value;
-      const contactName = document.getElementById('lead-contact').value;
-      const email = document.getElementById('lead-email').value;
-      const serviceType = document.getElementById('lead-service').value;
-      const currencyCode = document.getElementById('lead-currency').value;
-      const value = parseFloat(document.getElementById('lead-budget').value) || 0;
-
-      const currObj = CURRENCIES.find(c => c.code === currencyCode) || CURRENCIES[0];
-
-      appStore.addLead({
-        company,
-        contactName,
-        email,
-        serviceType,
-        value,
-        currencySymbol: currObj.symbol,
-        stage: 'new-inquiry'
-      });
-
-      form.reset();
-      modal.classList.remove('active');
-    });
-  }
 }
 
 function escapeHtml(str) {
