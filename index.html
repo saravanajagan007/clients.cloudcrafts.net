@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AgencyOS — Multi-Tenant Enterprise Agency Operating System & SaaS CRM</title>
-  <meta name="description" content="Production-grade SaaS CRM for Website Design Agencies, Digital Marketing Agencies, Software Companies, and Freelancers." />
+  <title>AgencyOS — Multi-Tenant Enterprise Agency Operating System & Client Portal</title>
+  <meta name="description" content="Production-grade SaaS CRM for Website Design Agencies, Digital Marketing Agencies, Software Companies, and Client Portal." />
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
@@ -16,15 +16,23 @@
         <div class="brand-icon">⚡</div>
         <div class="brand-text">
           <h1>AgencyOS</h1>
-          <p>ENTERPRISE SAAS LOGIN</p>
+          <p id="auth-subtitle">ENTERPRISE SAAS LOGIN</p>
         </div>
+      </div>
+
+      <!-- Auth Role Switcher Tabs -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; background: rgba(10, 15, 26, 0.7); border: 1px solid var(--border-glass); border-radius: var(--radius-sm); padding: 0.25rem; margin-bottom: 1.25rem;">
+        <button type="button" id="tab-auth-staff" class="action-btn btn-sm primary" style="justify-content: center;">Agency Staff</button>
+        <button type="button" id="tab-auth-client" class="action-btn btn-sm" style="justify-content: center; background: transparent; border: none;">Client Portal</button>
       </div>
 
       <div class="auth-alert" id="auth-error-alert" style="display: none;"></div>
 
       <form id="login-form">
+        <input type="hidden" id="login-role-type" value="staff" />
+        
         <div class="form-group">
-          <label for="login-email">Email Address</label>
+          <label for="login-email" id="lbl-login-email">Agency Email Address</label>
           <input type="email" id="login-email" class="form-control" value="saravanajagan@gmail.com" required placeholder="saravanajagan@gmail.com" />
         </div>
         <div class="form-group">
@@ -33,11 +41,11 @@
         </div>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; font-size: 0.8rem; color: var(--text-muted);">
           <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
-            <input type="checkbox" checked style="accent-color: var(--color-primary);" /> Remember session
+            <input type="checkbox" checked style="accent-color: var(--color-indigo);" /> Remember session
           </label>
-          <a href="#" style="color: var(--color-cyan); text-decoration: none;" onclick="alert('Demo reset instructions: Email is saravanajagan@gmail.com and password is Goldwinner007#')">Forgot password?</a>
+          <a href="#" style="color: var(--color-cyan); text-decoration: none;" id="auth-demo-hint">Demo Credentials</a>
         </div>
-        <button type="submit" class="action-btn primary" style="width: 100%; justify-content: center; padding: 0.75rem;">Sign In to AgencyOS Workspace ➔</button>
+        <button type="submit" class="action-btn primary" id="btn-login-submit" style="width: 100%; justify-content: center; padding: 0.75rem;">Sign In to AgencyOS Workspace ➔</button>
       </form>
     </div>
   </div>
@@ -50,102 +58,128 @@
         <div class="brand-icon">⚡</div>
         <div class="brand-text">
           <h1>AgencyOS</h1>
-          <p>ENTERPRISE SAAS</p>
+          <p id="sidebar-role-tag">ENTERPRISE SAAS</p>
         </div>
       </div>
 
-      <!-- Multi-Tenant Workspace Selector -->
-      <div class="tenant-selector">
+      <!-- Multi-Tenant Workspace Selector (Hidden for Clients) -->
+      <div class="tenant-selector" id="sidebar-tenant-wrapper">
         <select id="tenant-select" aria-label="Select Workspace Tenant">
           <!-- Populated dynamically by state.js -->
         </select>
       </div>
 
-      <nav class="nav-group">
-        <div class="nav-title">Sales & CRM</div>
-        <a class="nav-item active" data-view="dashboard">
-          <span class="nav-icon">📊</span>
-          <span>Overview</span>
-        </a>
-        <a class="nav-item" data-view="kanban">
-          <span class="nav-icon">📌</span>
-          <span>Sales Pipeline</span>
-        </a>
-        <a class="nav-item" data-view="leads">
-          <span class="nav-icon">🎯</span>
-          <span>Lead Directory</span>
-        </a>
-        <a class="nav-item" data-view="timeline">
-          <span class="nav-icon">🕒</span>
-          <span>CRM Activity Stream</span>
-        </a>
-        <a class="nav-item" data-view="clients">
-          <span class="nav-icon">💼</span>
-          <span>Client 360° Directory</span>
-        </a>
-      </nav>
+      <!-- Staff Navigation Group -->
+      <div id="nav-group-staff">
+        <nav class="nav-group">
+          <div class="nav-title">Sales & CRM</div>
+          <a class="nav-item active" data-view="dashboard">
+            <span class="nav-icon">📊</span>
+            <span>Overview</span>
+          </a>
+          <a class="nav-item" data-view="kanban">
+            <span class="nav-icon">📌</span>
+            <span>Sales Pipeline</span>
+          </a>
+          <a class="nav-item" data-view="leads">
+            <span class="nav-icon">🎯</span>
+            <span>Lead Directory</span>
+          </a>
+          <a class="nav-item" data-view="timeline">
+            <span class="nav-icon">🕒</span>
+            <span>CRM Activity Stream</span>
+          </a>
+          <a class="nav-item" data-view="clients">
+            <span class="nav-icon">💼</span>
+            <span>Client 360° Directory</span>
+          </a>
+        </nav>
 
-      <nav class="nav-group">
-        <div class="nav-title">Proposals & Delivery</div>
-        <a class="nav-item" data-view="proposals">
-          <span class="nav-icon">✍️</span>
-          <span>Proposal Builder</span>
-        </a>
-        <a class="nav-item" data-view="quotations">
-          <span class="nav-icon">🧾</span>
-          <span>Quotation Builder</span>
-        </a>
-        <a class="nav-item" data-view="projects">
-          <span class="nav-icon">🚀</span>
-          <span>Projects & Tasks</span>
-        </a>
-      </nav>
+        <nav class="nav-group">
+          <div class="nav-title">Proposals & Delivery</div>
+          <a class="nav-item" data-view="proposals">
+            <span class="nav-icon">✍️</span>
+            <span>Proposal Builder</span>
+          </a>
+          <a class="nav-item" data-view="quotations">
+            <span class="nav-icon">🧾</span>
+            <span>Quotation Builder</span>
+          </a>
+          <a class="nav-item" data-view="projects">
+            <span class="nav-icon">🚀</span>
+            <span>Projects & Tasks</span>
+          </a>
+        </nav>
 
-      <nav class="nav-group">
-        <div class="nav-title">Automation & AI</div>
-        <a class="nav-item" data-view="aicopilot">
-          <span class="nav-icon">🤖</span>
-          <span>AI Copilot Engine</span>
-        </a>
-        <a class="nav-item" data-view="automation">
-          <span class="nav-icon">⚡</span>
-          <span>Visual Automation</span>
-        </a>
-        <a class="nav-item" data-view="clientportal">
-          <span class="nav-icon">🌐</span>
-          <span>End-Client Portal</span>
-        </a>
-      </nav>
+        <nav class="nav-group">
+          <div class="nav-title">Automation & AI</div>
+          <a class="nav-item" data-view="aicopilot">
+            <span class="nav-icon">🤖</span>
+            <span>AI Copilot Engine</span>
+          </a>
+          <a class="nav-item" data-view="automation">
+            <span class="nav-icon">⚡</span>
+            <span>Visual Automation</span>
+          </a>
+          <a class="nav-item" data-view="clientportal">
+            <span class="nav-icon">🌐</span>
+            <span>Client Portal View</span>
+          </a>
+        </nav>
 
-      <nav class="nav-group">
-        <div class="nav-title">Finance & Ecosystem</div>
-        <a class="nav-item" data-view="invoices">
-          <span class="nav-icon">💳</span>
-          <span>Invoices & Retainers</span>
-        </a>
-        <a class="nav-item" data-view="hosting">
-          <span class="nav-icon">☁️</span>
-          <span>Domain & Hosting</span>
-        </a>
-        <a class="nav-item" data-view="reports">
-          <span class="nav-icon">📈</span>
-          <span>Reports & Analytics</span>
-        </a>
-        <a class="nav-item" data-view="integrations">
-          <span class="nav-icon">🔌</span>
-          <span>Integrations Hub</span>
-        </a>
-        <a class="nav-item" data-view="settings">
-          <span class="nav-icon">⚙️</span>
-          <span>Workspace & RBAC</span>
-        </a>
-      </nav>
+        <nav class="nav-group">
+          <div class="nav-title">Finance & Ecosystem</div>
+          <a class="nav-item" data-view="invoices">
+            <span class="nav-icon">💳</span>
+            <span>Invoices & Retainers</span>
+          </a>
+          <a class="nav-item" data-view="hosting">
+            <span class="nav-icon">☁️</span>
+            <span>Domain & Hosting</span>
+          </a>
+          <a class="nav-item" data-view="reports">
+            <span class="nav-icon">📈</span>
+            <span>Reports & Analytics</span>
+          </a>
+          <a class="nav-item" data-view="integrations">
+            <span class="nav-icon">🔌</span>
+            <span>Integrations Hub</span>
+          </a>
+          <a class="nav-item" data-view="settings">
+            <span class="nav-icon">⚙️</span>
+            <span>Workspace & RBAC</span>
+          </a>
+        </nav>
+      </div>
+
+      <!-- Scoped Client Navigation Group -->
+      <div id="nav-group-client" style="display: none;">
+        <nav class="nav-group">
+          <div class="nav-title">Client Self-Service Portal</div>
+          <a class="nav-item active" data-view="clientportal">
+            <span class="nav-icon">🌐</span>
+            <span>My Projects & Portal</span>
+          </a>
+          <a class="nav-item" data-view="proposals">
+            <span class="nav-icon">✍️</span>
+            <span>My Proposals & E-Sign</span>
+          </a>
+          <a class="nav-item" data-view="invoices">
+            <span class="nav-icon">💳</span>
+            <span>My Invoices & Retainers</span>
+          </a>
+          <a class="nav-item" data-view="hosting">
+            <span class="nav-icon">☁️</span>
+            <span>Domain Assets & SSL</span>
+          </a>
+        </nav>
+      </div>
 
       <div class="user-profile">
         <div class="user-profile-left">
-          <div class="avatar">SJ</div>
+          <div class="avatar" id="sidebar-avatar">SJ</div>
           <div class="user-info">
-            <h4>Saravana Jagan</h4>
+            <h4 id="sidebar-username">Saravana Jagan</h4>
             <p id="user-role-badge">Agency Owner</p>
           </div>
         </div>
@@ -424,7 +458,7 @@
             <div class="panel-header">
               <h3>Role-Based Access Control (RBAC)</h3>
             </div>
-            <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 1rem;">Current Role: <strong>Agency Owner</strong> (Full access to all leads, invoices, proposals, and team settings)</p>
+            <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 1rem;">Current Role: <strong id="rbac-role-name">Agency Owner</strong></p>
             <button class="action-btn primary" onclick="alert('RBAC permission matrix saved successfully!')">Save Permission Matrix</button>
           </div>
         </section>

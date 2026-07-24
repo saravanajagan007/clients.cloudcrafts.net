@@ -1,4 +1,4 @@
-/* AgencyOS — Multi-Tenant Production-Grade State & Data Store with Auth, Multi-Currency, LocalStorage & Backend Database API */
+/* AgencyOS — Multi-Tenant Production-Grade State & Data Store with Auth, Multi-Currency, Client Portal, & Backend DB */
 
 import { createLeadApi, updateLeadStageApi, loginApi } from './api.js';
 
@@ -43,6 +43,7 @@ export const INITIAL_STATE = {
   proposals: [],
   quotations: [],
   invoices: [],
+  tickets: [],
   activityLog: []
 };
 
@@ -77,6 +78,7 @@ class Store {
         proposals: this.state.proposals,
         quotations: this.state.quotations,
         invoices: this.state.invoices,
+        tickets: this.state.tickets,
         activityLog: this.state.activityLog
       };
       localStorage.setItem(STATE_STORAGE_KEY, JSON.stringify(toSave));
@@ -90,7 +92,7 @@ class Store {
       const stored = localStorage.getItem(AUTH_STORAGE_KEY);
       if (stored) {
         const session = JSON.parse(stored);
-        if (session && session.email === 'saravanajagan@gmail.com') {
+        if (session && session.email) {
           this.state.isAuthenticated = true;
           this.state.currentUser = session;
         }
@@ -100,23 +102,44 @@ class Store {
     }
   }
 
-  login(email, password) {
-    if (email === 'saravanajagan@gmail.com' && password === 'Goldwinner007#') {
+  login(email, password, role = 'staff') {
+    if (role === 'staff') {
+      if (email === 'saravanajagan@gmail.com' && password === 'Goldwinner007#') {
+        const user = {
+          name: 'Saravana Jagan',
+          email: 'saravanajagan@gmail.com',
+          role: 'Agency Owner',
+          type: 'staff',
+          company: 'AgencyOS Studio',
+          loggedInAt: new Date().toISOString()
+        };
+        this.state.isAuthenticated = true;
+        this.state.currentUser = user;
+        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+        this.addActivityLog('User Saravana Jagan (Agency Owner) logged in', 'info');
+        loginApi(email, password).catch(() => {});
+        this.notify();
+        return { success: true };
+      }
+      return { success: false, message: 'Invalid Staff email or password.' };
+    } else {
+      // Client Portal Login
+      const companyName = email.split('@')[0].toUpperCase();
       const user = {
-        name: 'Saravana Jagan',
-        email: 'saravanajagan@gmail.com',
-        role: 'Agency Owner',
+        name: email.split('@')[0],
+        email: email,
+        role: 'Client',
+        type: 'client',
+        company: companyName,
         loggedInAt: new Date().toISOString()
       };
       this.state.isAuthenticated = true;
       this.state.currentUser = user;
       localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
-      this.addActivityLog('User Saravana Jagan logged in successfully', 'info');
-      loginApi(email, password).catch(() => {});
+      this.addActivityLog(`Client ${email} logged into Client Portal`, 'info');
       this.notify();
       return { success: true };
     }
-    return { success: false, message: 'Invalid credentials. Please check email and password.' };
   }
 
   logout() {
@@ -128,6 +151,10 @@ class Store {
 
   getState() {
     return this.state;
+  }
+
+  isClientUser() {
+    return this.state.currentUser && this.state.currentUser.type === 'client';
   }
 
   getActiveTenant() {
@@ -161,11 +188,19 @@ class Store {
   }
 
   getProjects() {
-    return this.state.projects.filter(p => p.tenantId === this.state.activeTenantId);
+    const all = this.state.projects.filter(p => p.tenantId === this.state.activeTenantId);
+    if (this.isClientUser()) {
+      return all.filter(p => p.clientEmail === this.state.currentUser.email || p.clientName.toLowerCase().includes(this.state.currentUser.company.toLowerCase()));
+    }
+    return all;
   }
 
   getProposals() {
-    return this.state.proposals.filter(p => p.tenantId === this.state.activeTenantId);
+    const all = this.state.proposals.filter(p => p.tenantId === this.state.activeTenantId);
+    if (this.isClientUser()) {
+      return all.filter(p => p.clientEmail === this.state.currentUser.email || p.clientName.toLowerCase().includes(this.state.currentUser.company.toLowerCase()));
+    }
+    return all;
   }
 
   getQuotations() {
@@ -173,7 +208,37 @@ class Store {
   }
 
   getInvoices() {
-    return this.state.invoices.filter(i => i.tenantId === this.state.activeTenantId);
+    const all = this.state.invoices.filter(i => i.tenantId === this.state.activeTenantId);
+    if (this.isClientUser()) {
+      return all.filter(i => i.clientEmail === this.state.currentUser.email || i.clientName.toLowerCase().includes(this.state.currentUser.company.toLowerCase()));
+    }
+    return all;
+  }
+
+  getTickets() {
+    const all = this.state.tickets || [];
+    if (this.isClientUser()) {
+      return all.filter(t => t.clientEmail === this.state.currentUser.email);
+    }
+    return all;
+  }
+
+  addTicket(ticketData) {
+    if (!this.state.tickets) this.state.tickets = [];
+    const newTicket = {
+      id: `TICK-${Math.floor(1000 + Math.random() * 8999)}`,
+      tenantId: this.state.activeTenantId,
+      clientEmail: this.state.currentUser ? this.state.currentUser.email : 'client@external.com',
+      company: this.state.currentUser ? this.state.currentUser.company : 'External Client',
+      status: 'Open',
+      createdAt: new Date().toISOString().split('T')[0],
+      ...ticketData
+    };
+    this.state.tickets.unshift(newTicket);
+    this.addActivityLog(`Support ticket ${newTicket.id} created by ${newTicket.company}`, 'support');
+    this.saveState();
+    this.notify();
+    return newTicket;
   }
 
   getActivityLogs() {

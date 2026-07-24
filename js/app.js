@@ -50,7 +50,7 @@ export function showToast(message, icon = '✅') {
   }, 3500);
 }
 
-/* Authentication Protection Guard */
+/* Authentication & Role Protection Guard */
 function initAuthGuard() {
   const authScreen = document.getElementById('auth-screen');
   const protectedApp = document.getElementById('protected-app');
@@ -58,11 +58,77 @@ function initAuthGuard() {
   const errorAlert = document.getElementById('auth-error-alert');
   const logoutBtn = document.getElementById('btn-logout');
 
+  const tabStaff = document.getElementById('tab-auth-staff');
+  const tabClient = document.getElementById('tab-auth-client');
+  const roleInput = document.getElementById('login-role-type');
+  const emailInput = document.getElementById('login-email');
+  const passInput = document.getElementById('login-password');
+  const submitBtn = document.getElementById('btn-login-submit');
+
+  // Role Tab Switching
+  if (tabStaff && tabClient) {
+    tabStaff.addEventListener('click', () => {
+      tabStaff.classList.add('primary');
+      tabStaff.style.background = '';
+      tabClient.classList.remove('primary');
+      tabClient.style.background = 'transparent';
+
+      roleInput.value = 'staff';
+      emailInput.value = 'saravanajagan@gmail.com';
+      passInput.value = 'Goldwinner007#';
+      submitBtn.textContent = 'Sign In to AgencyOS Workspace ➔';
+      document.getElementById('lbl-login-email').textContent = 'Agency Email Address';
+    });
+
+    tabClient.addEventListener('click', () => {
+      tabClient.classList.add('primary');
+      tabClient.style.background = '';
+      tabStaff.classList.remove('primary');
+      tabStaff.style.background = 'transparent';
+
+      roleInput.value = 'client';
+      emailInput.value = 'client@novusfintech.com';
+      passInput.value = 'Client123#';
+      submitBtn.textContent = 'Sign In to Client Self-Service Portal ➔';
+      document.getElementById('lbl-login-email').textContent = 'Client Email Address';
+    });
+  }
+
   function updateAuthDisplay() {
     const state = appStore.getState();
     if (state.isAuthenticated) {
       if (authScreen) authScreen.style.display = 'none';
       if (protectedApp) protectedApp.style.display = 'flex';
+
+      // Adapt Sidebar for Client vs Staff
+      const isClient = appStore.isClientUser();
+      const staffNav = document.getElementById('nav-group-staff');
+      const clientNav = document.getElementById('nav-group-client');
+      const tenantSelect = document.getElementById('sidebar-tenant-wrapper');
+      const quickLeadBtn = document.getElementById('btn-quick-lead');
+
+      const user = state.currentUser;
+      if (document.getElementById('sidebar-username')) document.getElementById('sidebar-username').textContent = user.name;
+      if (document.getElementById('user-role-badge')) document.getElementById('user-role-badge').textContent = user.role;
+      if (document.getElementById('rbac-role-name')) document.getElementById('rbac-role-name').textContent = user.role;
+
+      if (isClient) {
+        if (staffNav) staffNav.style.display = 'none';
+        if (clientNav) clientNav.style.display = 'block';
+        if (tenantSelect) tenantSelect.style.display = 'none';
+        if (quickLeadBtn) quickLeadBtn.style.display = 'none';
+
+        // Auto navigate client to clientportal view
+        const portalNav = document.querySelector('.nav-item[data-view="clientportal"]');
+        if (portalNav) portalNav.click();
+
+      } else {
+        if (staffNav) staffNav.style.display = 'block';
+        if (clientNav) clientNav.style.display = 'none';
+        if (tenantSelect) tenantSelect.style.display = 'block';
+        if (quickLeadBtn) quickLeadBtn.style.display = 'inline-flex';
+      }
+
     } else {
       if (authScreen) authScreen.style.display = 'flex';
       if (protectedApp) protectedApp.style.display = 'none';
@@ -72,14 +138,15 @@ function initAuthGuard() {
   if (loginForm) {
     loginForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      const email = document.getElementById('login-email').value;
-      const password = document.getElementById('login-password').value;
+      const email = emailInput.value.trim();
+      const password = passInput.value.trim();
+      const role = roleInput.value;
 
-      const result = appStore.login(email, password);
+      const result = appStore.login(email, password, role);
       if (result.success) {
         if (errorAlert) errorAlert.style.display = 'none';
         updateAuthDisplay();
-        showToast('Welcome back, Saravana Jagan! Workspaces active.', '👋');
+        showToast(`Welcome back, ${appStore.getState().currentUser.name}!`, '👋');
       } else {
         if (errorAlert) {
           errorAlert.textContent = result.message;
