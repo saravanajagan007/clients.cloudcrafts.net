@@ -1,0 +1,20 @@
+{
+  "name": "clients.cloudcrafts.net",
+  "version": "1.0.0",
+  "description": "Premium Client Portal and Infrastructure Dashboard for CloudCrafts",
+  "main": "index.html",
+  "type": "module",
+  "scripts": {
+    "start": "npx serve .",
+    "dev": "npx serve ."
+  },
+  "keywords": [
+    "cloudcrafts",
+    "client-portal",
+    "dashboard",
+    "cloud-infrastructure",
+    "saas"
+  ],
+  "author": "Saravana Jagan",
+  "license": "ISC"
+}
