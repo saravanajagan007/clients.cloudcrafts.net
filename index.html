@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AgencyOS — Multi-Tenant Enterprise Agency Operating System & CRM</title>
+  <title>AgencyOS — Multi-Tenant Enterprise Agency Operating System & SaaS CRM</title>
   <meta name="description" content="Production-grade SaaS CRM for Website Design Agencies, Digital Marketing Agencies, Software Companies, and Freelancers." />
   <link rel="stylesheet" href="css/styles.css" />
 </head>
@@ -28,7 +28,7 @@
       </div>
 
       <nav class="nav-group">
-        <div class="nav-title">Core Operations</div>
+        <div class="nav-title">Sales & CRM</div>
         <a class="nav-item active" data-view="dashboard">
           <span class="nav-icon">📊</span>
           <span>Overview</span>
@@ -41,13 +41,29 @@
           <span class="nav-icon">🎯</span>
           <span>Lead Directory</span>
         </a>
+        <a class="nav-item" data-view="timeline">
+          <span class="nav-icon">🕒</span>
+          <span>CRM Activity Stream</span>
+        </a>
         <a class="nav-item" data-view="clients">
           <span class="nav-icon">💼</span>
           <span>Client 360° Directory</span>
         </a>
+      </nav>
+
+      <nav class="nav-group">
+        <div class="nav-title">Proposals & Delivery</div>
         <a class="nav-item" data-view="proposals">
           <span class="nav-icon">✍️</span>
           <span>Proposal Builder</span>
+        </a>
+        <a class="nav-item" data-view="quotations">
+          <span class="nav-icon">🧾</span>
+          <span>Quotation Builder</span>
+        </a>
+        <a class="nav-item" data-view="projects">
+          <span class="nav-icon">🚀</span>
+          <span>Projects & Tasks</span>
         </a>
       </nav>
 
@@ -68,7 +84,7 @@
       </nav>
 
       <nav class="nav-group">
-        <div class="nav-title">Finance & Assets</div>
+        <div class="nav-title">Finance & Ecosystem</div>
         <a class="nav-item" data-view="invoices">
           <span class="nav-icon">💳</span>
           <span>Invoices & Retainers</span>
@@ -76,6 +92,14 @@
         <a class="nav-item" data-view="hosting">
           <span class="nav-icon">☁️</span>
           <span>Domain & Hosting</span>
+        </a>
+        <a class="nav-item" data-view="reports">
+          <span class="nav-icon">📈</span>
+          <span>Reports & Analytics</span>
+        </a>
+        <a class="nav-item" data-view="integrations">
+          <span class="nav-icon">🔌</span>
+          <span>Integrations Hub</span>
         </a>
         <a class="nav-item" data-view="settings">
           <span class="nav-icon">⚙️</span>
@@ -200,7 +224,12 @@
           </div>
         </section>
 
-        <!-- View 4: Client 360° Directory -->
+        <!-- View 4: CRM Activity Stream & Follow-ups -->
+        <section id="view-timeline" class="view-section">
+          <div id="timeline-component-container"></div>
+        </section>
+
+        <!-- View 5: Client 360° Directory -->
         <section id="view-clients" class="view-section">
           <div class="page-title">
             <h2>Client 360° Directory</h2>
@@ -226,27 +255,37 @@
           </div>
         </section>
 
-        <!-- View 5: Proposal Builder -->
+        <!-- View 6: Proposal Builder -->
         <section id="view-proposals" class="view-section">
           <div id="proposal-builder-container"></div>
         </section>
 
-        <!-- View 6: AI Copilot Engine -->
+        <!-- View 7: Quotation Builder & Service Catalog -->
+        <section id="view-quotations" class="view-section">
+          <div id="quotations-component-container"></div>
+        </section>
+
+        <!-- View 8: Projects & Tasks -->
+        <section id="view-projects" class="view-section">
+          <div id="projects-component-container"></div>
+        </section>
+
+        <!-- View 9: AI Copilot Engine -->
         <section id="view-aicopilot" class="view-section">
           <div id="aicopilot-view-container"></div>
         </section>
 
-        <!-- View 7: Visual Automation -->
+        <!-- View 10: Visual Automation -->
         <section id="view-automation" class="view-section">
           <div id="automation-view-container"></div>
         </section>
 
-        <!-- View 8: End-Client Portal View -->
+        <!-- View 11: End-Client Portal View -->
         <section id="view-clientportal" class="view-section">
           <div id="clientportal-view-container"></div>
         </section>
 
-        <!-- View 9: Invoices & Retainers -->
+        <!-- View 12: Invoices & Retainers -->
         <section id="view-invoices" class="view-section">
           <div class="page-title">
             <h2>Invoices & Retainer Billing</h2>
@@ -272,7 +311,7 @@
           </div>
         </section>
 
-        <!-- View 10: Domain & Hosting Assets -->
+        <!-- View 13: Domain & Hosting Assets -->
         <section id="view-hosting" class="view-section">
           <div class="page-title">
             <h2>Domain & Hosting Asset Vault</h2>
@@ -310,7 +349,17 @@
           </div>
         </section>
 
-        <!-- View 11: Settings & RBAC -->
+        <!-- View 14: Reports & Analytics -->
+        <section id="view-reports" class="view-section">
+          <div id="reports-component-container"></div>
+        </section>
+
+        <!-- View 15: Integrations Hub -->
+        <section id="view-integrations" class="view-section">
+          <div id="integrations-component-container"></div>
+        </section>
+
+        <!-- View 16: Settings & RBAC -->
         <section id="view-settings" class="view-section">
           <div class="page-title">
             <h2>Workspace Settings & RBAC Permissions Matrix</h2>

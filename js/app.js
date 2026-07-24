@@ -6,6 +6,11 @@ import { renderProposalBuilder } from './components/proposals.js';
 import { renderAutomationEngine } from './components/automation.js';
 import { renderAiCopilotPanel } from './components/aiCopilot.js';
 import { renderClientPortalView } from './components/clientPortal.js';
+import { renderCrmTimeline } from './components/crmTimeline.js';
+import { renderQuotationBuilder } from './components/quotations.js';
+import { renderProjectsTasks } from './components/projectsTasks.js';
+import { renderReportsAnalytics } from './components/reportsAnalytics.js';
+import { renderIntegrationsHub } from './components/integrations.js';
 import { initCommandPalette, toggleCommandPalette } from './components/commandPalette.js';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -62,16 +67,37 @@ function initNavigation() {
       });
 
       // Lazy render components on view switch
-      if (targetView === 'kanban') {
-        renderKanbanBoard(document.getElementById('kanban-component-container'));
-      } else if (targetView === 'proposals') {
-        renderProposalBuilder(document.getElementById('proposal-builder-container'));
-      } else if (targetView === 'aicopilot') {
-        renderAiCopilotPanel(document.getElementById('aicopilot-view-container'));
-      } else if (targetView === 'automation') {
-        renderAutomationEngine(document.getElementById('automation-view-container'));
-      } else if (targetView === 'clientportal') {
-        renderClientPortalView(document.getElementById('clientportal-view-container'));
+      switch (targetView) {
+        case 'kanban':
+          renderKanbanBoard(document.getElementById('kanban-component-container'));
+          break;
+        case 'timeline':
+          renderCrmTimeline(document.getElementById('timeline-component-container'));
+          break;
+        case 'proposals':
+          renderProposalBuilder(document.getElementById('proposal-builder-container'));
+          break;
+        case 'quotations':
+          renderQuotationBuilder(document.getElementById('quotations-component-container'));
+          break;
+        case 'projects':
+          renderProjectsTasks(document.getElementById('projects-component-container'));
+          break;
+        case 'aicopilot':
+          renderAiCopilotPanel(document.getElementById('aicopilot-view-container'));
+          break;
+        case 'automation':
+          renderAutomationEngine(document.getElementById('automation-view-container'));
+          break;
+        case 'clientportal':
+          renderClientPortalView(document.getElementById('clientportal-view-container'));
+          break;
+        case 'reports':
+          renderReportsAnalytics(document.getElementById('reports-component-container'));
+          break;
+        case 'integrations':
+          renderIntegrationsHub(document.getElementById('integrations-component-container'));
+          break;
       }
     });
   });
