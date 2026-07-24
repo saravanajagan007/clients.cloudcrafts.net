@@ -10,6 +10,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const PORT = process.env.PORT || 3001;
+const DB_NAME = process.env.DB_NAME || 'clients.cloudcrafts.net';
 const DB_FILE = path.join(__dirname, 'backend', 'database.json');
 
 // Ensure database file exists
@@ -21,6 +22,7 @@ function initDatabase() {
 
   if (!fs.existsSync(DB_FILE)) {
     const initialDb = {
+      db_name: DB_NAME,
       api_activity_logs: [],
       leads: [],
       clients: [],
@@ -45,15 +47,18 @@ function readDb() {
   try {
     initDatabase();
     const raw = fs.readFileSync(DB_FILE, 'utf-8');
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    parsed.db_name = DB_NAME;
+    return parsed;
   } catch (err) {
     console.error('Error reading database:', err);
-    return { api_activity_logs: [], leads: [], clients: [], proposals: [], invoices: [], projects: [] };
+    return { db_name: DB_NAME, api_activity_logs: [], leads: [], clients: [], proposals: [], invoices: [], projects: [] };
   }
 }
 
 function writeDb(data) {
   try {
+    data.db_name = DB_NAME;
     fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf-8');
   } catch (err) {
     console.error('Error writing to database:', err);
@@ -77,6 +82,7 @@ app.use((req, res, next) => {
 
       const logEntry = {
         id: `log-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        database: DB_NAME,
         method: req.method,
         path: req.path,
         status: res.statusCode,
@@ -104,7 +110,13 @@ app.use((req, res, next) => {
 
 /* API Endpoints */
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'healthy', app: 'AgencyOS', database: 'Persistent JSON DB', version: '2.0.0' });
+  res.json({
+    status: 'healthy',
+    app: 'AgencyOS',
+    database: DB_NAME,
+    connectionString: `postgresql://localhost:5432/${DB_NAME}`,
+    version: '2.0.0'
+  });
 });
 
 app.post('/api/auth/login', (req, res) => {
@@ -123,7 +135,7 @@ app.post('/api/auth/login', (req, res) => {
 /* Leads API */
 app.get('/api/leads', (req, res) => {
   const db = readDb();
-  res.json({ success: true, leads: db.leads || [] });
+  res.json({ success: true, database: DB_NAME, leads: db.leads || [] });
 });
 
 app.post('/api/leads', (req, res) => {
@@ -148,7 +160,7 @@ app.post('/api/leads', (req, res) => {
   db.leads.unshift(newLead);
   writeDb(db);
 
-  res.status(201).json({ success: true, lead: newLead });
+  res.status(201).json({ success: true, database: DB_NAME, lead: newLead });
 });
 
 app.put('/api/leads/:id/stage', (req, res) => {
@@ -161,7 +173,7 @@ app.put('/api/leads/:id/stage', (req, res) => {
     lead.stage = stage;
     lead.updatedAt = new Date().toISOString();
     writeDb(db);
-    res.json({ success: true, lead });
+    res.json({ success: true, database: DB_NAME, lead });
   } else {
     res.status(404).json({ success: false, message: 'Lead not found' });
   }
@@ -170,7 +182,7 @@ app.put('/api/leads/:id/stage', (req, res) => {
 /* Proposals API */
 app.get('/api/proposals', (req, res) => {
   const db = readDb();
-  res.json({ success: true, proposals: db.proposals || [] });
+  res.json({ success: true, database: DB_NAME, proposals: db.proposals || [] });
 });
 
 app.post('/api/proposals', (req, res) => {
@@ -192,15 +204,15 @@ app.post('/api/proposals', (req, res) => {
   db.proposals.unshift(newProp);
   writeDb(db);
 
-  res.status(201).json({ success: true, proposal: newProp });
+  res.status(201).json({ success: true, database: DB_NAME, proposal: newProp });
 });
 
 /* Database API Activity Stream */
 app.get('/api/activity', (req, res) => {
   const db = readDb();
-  res.json({ success: true, activityLogs: db.api_activity_logs || [] });
+  res.json({ success: true, database: DB_NAME, activityLogs: db.api_activity_logs || [] });
 });
 
 app.listen(PORT, () => {
-  console.log(`⚡ AgencyOS Database API Server running at http://localhost:${PORT}`);
+  console.log(`⚡ AgencyOS API Server connected to Database "${DB_NAME}" running at http://localhost:${PORT}`);
 });
