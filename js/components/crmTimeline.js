@@ -4,37 +4,34 @@ import { appStore } from '../state.js';
 export function renderCrmTimeline(containerEl) {
   if (!containerEl) return;
 
-  const activities = [
-    { type: 'whatsapp', text: 'WhatsApp message sent to Elena Rostova: "Proposal #PROP-801 breakdown attached"', time: '10 mins ago', author: 'Marcus Vance' },
-    { type: 'email', text: 'Email opened by Dr. Robert Chen (AeroDynamics Aerospace)', time: '45 mins ago', author: 'System Tracker' },
-    { type: 'call', text: 'Discovery Call completed with Julian Vance (Krypton Luxury) — 25 mins', time: '2 hours ago', author: 'Sarah Jenkins' },
-    { type: 'payment', text: 'Payment of $12,250 processed via Stripe (Invoice #INV-2026-001)', time: '4 hours ago', author: 'Stripe Integration' },
-    { type: 'meeting', text: 'Scheduled Strategy Meeting with Verve Health team for July 28', time: '1 day ago', author: 'Alex Mercer' }
-  ];
-
-  const followups = [
-    { client: 'Krypton Luxury E-Commerce', type: 'Call', text: 'Follow up on Shopify Plus scope proposal', due: 'Today, 4:00 PM', status: 'Pending' },
-    { client: 'Lumina Solar Technologies', type: 'WhatsApp', text: 'Send landing page design portfolio samples', due: 'Tomorrow, 11:00 AM', status: 'Pending' }
-  ];
+  const activities = appStore.getActivityLogs();
+  const leads = appStore.getLeads();
 
   containerEl.innerHTML = `
     <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;">
       <!-- Timeline Feed -->
-      <div class="glass-panel">
+      <div class="glass-panel" style="margin-bottom: 0;">
         <div class="panel-header">
           <h3>CRM Chronological Activity Stream</h3>
-          <button class="action-btn btn-sm primary" id="btn-add-activity">+ Log Activity</button>
+          <button class="action-btn btn-sm primary" id="btn-log-new-activity">+ Log Activity</button>
         </div>
 
-        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
-          ${activities.map(act => `
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+          ${activities.length === 0 ? `
+            <div style="padding: 2.5rem 1.5rem; text-align: center; color: var(--text-muted);">
+              <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">🕒</div>
+              <h4 style="font-family: var(--font-heading); font-size: 1.05rem; color: var(--text-main); margin-bottom: 0.35rem;">No Activity Logged Yet</h4>
+              <p style="font-size: 0.85rem; max-width: 380px; margin: 0 auto 1rem;">All calls, meetings, WhatsApp messages, proposals, and lead stage changes will appear here chronologically.</p>
+              <button class="action-btn primary btn-sm" id="btn-log-first-activity">+ Log First Activity</button>
+            </div>
+          ` : activities.map(act => `
             <div style="display: flex; gap: 1rem; background: rgba(10, 15, 26, 0.6); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-glass);">
               <div style="width: 38px; height: 38px; border-radius: 50%; background: rgba(99, 102, 241, 0.15); color: var(--color-primary); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0;">
-                ${act.type === 'whatsapp' ? '💬' : act.type === 'email' ? '✉️' : act.type === 'call' ? '📞' : act.type === 'payment' ? '💳' : '📅'}
+                ${act.type === 'whatsapp' ? '💬' : act.type === 'email' ? '✉️' : act.type === 'call' ? '📞' : act.type === 'payment' ? '💳' : act.type === 'lead' ? '🎯' : '🚀'}
               </div>
               <div style="flex: 1;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
-                  <strong style="font-size: 0.9rem;">${escapeHtml(act.author)}</strong>
+                  <strong style="font-size: 0.9rem;">Workspace Activity</strong>
                   <span style="font-size: 0.78rem; color: var(--text-dim);">${escapeHtml(act.time)}</span>
                 </div>
                 <p style="font-size: 0.85rem; color: var(--text-muted);">${escapeHtml(act.text)}</p>
@@ -45,25 +42,57 @@ export function renderCrmTimeline(containerEl) {
       </div>
 
       <!-- Smart Follow-ups Widget -->
-      <div class="glass-panel">
+      <div class="glass-panel" style="margin-bottom: 0;">
         <div class="panel-header">
           <h3>Smart Follow-up Reminders</h3>
-          <span class="badge badge-warning"><span class="badge-dot"></span> 2 Due</span>
+          <span class="badge ${leads.length > 0 ? 'badge-warning' : 'badge-success'}">
+            <span class="badge-dot"></span> ${leads.length} Active
+          </span>
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 1rem;">
-          ${followups.map(f => `
+          ${leads.length === 0 ? `
+            <div style="padding: 1.5rem 0.5rem; text-align: center; color: var(--text-dim); font-size: 0.82rem;">
+              No follow-ups due. Add new leads to schedule follow-up reminders.
+            </div>
+          ` : leads.map(lead => `
             <div style="background: rgba(10, 15, 26, 0.6); padding: 0.85rem; border-radius: var(--radius-sm); border: 1px solid var(--border-glass);">
-              <div style="font-size: 0.78rem; color: var(--color-cyan); font-weight: 600; margin-bottom: 0.2rem;">${f.type} · ${f.due}</div>
-              <h4 style="font-size: 0.9rem; margin-bottom: 0.35rem;">${escapeHtml(f.client)}</h4>
-              <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.65rem;">${escapeHtml(f.text)}</p>
-              <button class="action-btn btn-sm primary" onclick="alert('Follow-up completed!')">Mark Completed</button>
+              <div style="font-size: 0.78rem; color: var(--color-cyan); font-weight: 600; margin-bottom: 0.2rem;">Follow-up due: Today</div>
+              <h4 style="font-size: 0.9rem; margin-bottom: 0.35rem;">${escapeHtml(lead.company)}</h4>
+              <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.65rem;">Contact: ${escapeHtml(lead.contactName)} (${escapeHtml(lead.serviceType)})</p>
+              <button class="action-btn btn-sm primary btn-complete-followup" data-lead-name="${escapeHtml(lead.company)}">Mark Completed</button>
             </div>
           `).join('')}
         </div>
       </div>
     </div>
   `;
+
+  // Attach log activity button listeners
+  const btnLog = containerEl.querySelector('#btn-log-new-activity');
+  const btnLogFirst = containerEl.querySelector('#btn-log-first-activity');
+  
+  [btnLog, btnLogFirst].filter(Boolean).forEach(btn => {
+    btn.addEventListener('click', () => {
+      openActivityLogPrompt(containerEl);
+    });
+  });
+
+  containerEl.querySelectorAll('.btn-complete-followup').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const name = btn.getAttribute('data-lead-name');
+      appStore.addActivityLog(`Follow-up completed for ${name}`, 'call');
+      renderCrmTimeline(containerEl);
+    });
+  });
+}
+
+function openActivityLogPrompt(containerEl) {
+  const text = prompt('Enter Activity Note (e.g. "Called Client regarding requirement scope"):');
+  if (text && text.trim()) {
+    appStore.addActivityLog(text.trim(), 'note');
+    renderCrmTimeline(containerEl);
+  }
 }
 
 function escapeHtml(str) {
