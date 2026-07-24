@@ -1,6 +1,7 @@
-/* AgencyOS — Multi-Tenant Production-Grade State & Data Store with Auth & Multi-Currency */
+/* AgencyOS — Multi-Tenant Production-Grade State & Data Store with Auth, Multi-Currency, & LocalStorage Persistence */
 
 const AUTH_STORAGE_KEY = 'agencyos_auth_session';
+const STATE_STORAGE_KEY = 'agencyos_app_state';
 
 export const CURRENCIES = [
   { code: 'INR', symbol: '₹', name: 'INR (₹) — Indian Rupee' },
@@ -47,7 +48,39 @@ class Store {
   constructor(initialData) {
     this.state = JSON.parse(JSON.stringify(initialData));
     this.listeners = [];
+    this.loadState();
     this.checkSession();
+  }
+
+  loadState() {
+    try {
+      const storedState = localStorage.getItem(STATE_STORAGE_KEY);
+      if (storedState) {
+        const parsed = JSON.parse(storedState);
+        this.state = { ...this.state, ...parsed };
+      }
+    } catch {
+      // Use initial state if parsing fails
+    }
+  }
+
+  saveState() {
+    try {
+      const toSave = {
+        activeTenantId: this.state.activeTenantId,
+        tenants: this.state.tenants,
+        leads: this.state.leads,
+        clients: this.state.clients,
+        projects: this.state.projects,
+        proposals: this.state.proposals,
+        quotations: this.state.quotations,
+        invoices: this.state.invoices,
+        activityLog: this.state.activityLog
+      };
+      localStorage.setItem(STATE_STORAGE_KEY, JSON.stringify(toSave));
+    } catch (e) {
+      console.error('Failed to save state to localStorage', e);
+    }
   }
 
   checkSession() {
@@ -101,16 +134,18 @@ class Store {
   }
 
   setTenantCurrency(currencyCode) {
-    const tenant = this.getActiveTenant();
+    const tenant = this.state.tenants.find(t => t.id === this.state.activeTenantId) || this.state.tenants[0];
     const curr = CURRENCIES.find(c => c.code === currencyCode) || CURRENCIES[0];
     tenant.currency = curr.code;
     tenant.currencySymbol = curr.symbol;
     this.addActivityLog(`Workspace primary currency updated to ${curr.name}`, 'info');
+    this.saveState();
     this.notify();
   }
 
   setTenant(tenantId) {
     this.state.activeTenantId = tenantId;
+    this.saveState();
     this.notify();
   }
 
@@ -155,6 +190,7 @@ class Store {
     };
     this.state.leads.unshift(newLead);
     this.addActivityLog(`New lead captured: ${newLead.company} (${newLead.currencySymbol}${newLead.value.toLocaleString()})`, 'lead');
+    this.saveState();
     this.notify();
     return newLead;
   }
@@ -165,6 +201,7 @@ class Store {
       lead.stage = newStage;
       lead.updatedAt = new Date().toISOString().split('T')[0];
       this.addActivityLog(`Lead "${lead.company}" moved to ${newStage.replace('-', ' ')}`, 'lead');
+      this.saveState();
       this.notify();
     }
   }
@@ -181,6 +218,7 @@ class Store {
     };
     this.state.proposals.unshift(newProp);
     this.addActivityLog(`Created proposal for ${newProp.clientName} (${newProp.currencySymbol}${newProp.amount.toLocaleString()})`, 'proposal');
+    this.saveState();
     this.notify();
     return newProp;
   }
@@ -197,6 +235,7 @@ class Store {
     };
     this.state.invoices.unshift(newInv);
     this.addActivityLog(`Issued invoice ${newInv.id} to ${newInv.clientName} (${newInv.currencySymbol}${newInv.amount.toLocaleString()})`, 'payment');
+    this.saveState();
     this.notify();
     return newInv;
   }
@@ -209,6 +248,7 @@ class Store {
       time: 'Just now',
       type
     });
+    this.saveState();
   }
 
   subscribe(listener) {
